@@ -38,28 +38,40 @@ async function main() {
 }
 
 async function reserve() {
-const res = await fetch(API_URL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    userId: profile.userId,
-    name: profile.displayName
-  })
-});
+  const btn = document.getElementById("reserveBtn");
+  btn.disabled = true;
+  btn.innerText = "กำลังจองคิว...";
 
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: profile.userId,
+        name: profile.displayName
+      })
+    });
 
-  const data = await res.json();
+    const text = await res.text();
+    console.log("RAW:", text);
 
-  if (data.status === "ok") {
-    alert("คุณได้คิวที่ " + data.queue);
-  } else if (data.status === "exists") {
-    alert("คุณมีคิวแล้ว: " + data.queue);
-  } else {
-    alert("ERROR");
+    const data = JSON.parse(text);
+
+    document.getElementById("result").innerText =
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    document.getElementById("result").innerText =
+      "❌ FETCH ERROR: " + err.message;
+    console.error(err);
   }
+
+  btn.disabled = false;
+  btn.innerText = "จองคิว";
 }
+
 
 main();
 </script>
