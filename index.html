@@ -14,7 +14,7 @@
 
 <script>
 const LIFF_ID = "2008930440-jI56TpIn";
-const API_URL = "https://script.google.com/macros/s/AKfycbyUV-SNLAQuDEyfLpvhhcb0GXKkWk5yajewYN78SQADDgp0XR876y8mcxMAvGagPKzW/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbySzAzTfbVQcBIbLPSJln2Ya_F464IFRYb7j0CqEHMqtbPF1p0Ii9hoOlVAQKs9-FY/exec";
 
 let profile;
 
@@ -38,8 +38,30 @@ async function main() {
   }
 }
 
-function reserve() {
-  alert("เข้า reserve แล้ว");
+async function reserve() {
+  alert("เริ่มจองคิว");
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        userId: profile.userId,
+        name: profile.displayName
+      })
+    });
+
+    alert("ยิง GAS แล้ว");
+
+    const text = await res.text();
+    alert("GAS ตอบกลับ: " + text);
+
+  } catch (err) {
+    alert("FETCH ERROR: " + err.message);
+    console.error(err);
+  }
 }
 
 
