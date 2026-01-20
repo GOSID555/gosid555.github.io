@@ -1,153 +1,36 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ระบบจองคิว</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- LIFF SDK -->
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-      text-align: center;
-    }
-    .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: auto;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    button {
-      background: #06c755;
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 10px;
-    }
-    button:disabled {
-      background: #aaa;
-    }
-    #result {
-      margin-top: 15px;
-      font-size: 16px;
-      white-space: pre-line;
-    }
-  </style>
+<meta charset="utf-8">
+<title>จองคิว</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
-
 <body>
-  <div class="card">
-    <h2>📋 ระบบจองคิว</h2>
-    <p id="welcome">กำลังโหลด...</p>
-
-    <!-- ปุ่มนี้เรียกฟังก์ชัน reserve() -->
-    <button id="reserveBtn" onclick="reserve()">จองคิว</button>
-
-    <p id="result"></p>
-  </div>
+<h2>ระบบจองคิว</h2>
+<button onclick="reserve()">กดจองคิว</button>
+<p id="result"></p>
 
 <script>
-  /********************************************************
-   * 🔴 CONFIG ส่วนที่เชื่อมระบบ
-   ********************************************************/
+const liffId = "2008930440-jI56TpIn";
 
-  // LIFF ID จาก LINE Developers
-  const LIFF_ID = "2008930440-jI56TpIn";
+async function reserve() {
+  await liff.init({ liffId });
+  const profile = await liff.getProfile();
 
-  // 👉 URL นี้คือ Google Apps Script (Backend)
-  // อยู่ที่ Google Sheet → Extensions → Apps Script → Deploy
-  const API_URL = "https://script.google.com/macros/s/AKfycbwWp1wxQj-Ub_C36RWDVp3-Ao87EH4jQNjAy98GscgP8PwhwSuT6H5VqRjl9V_o99yv6A/exec";
+  const data = {
+    userId: profile.userId,
+    name: profile.displayName
+  };
 
-  let profile = null;
+  const res = await fetch("ใส่_GAS_URL", {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
 
-  /********************************************************
-   * 🔵 เริ่มต้น LIFF
-   ********************************************************/
-window.onload = async () => {
-  const w = document.getElementById("welcome");
-
-  try {
-    w.innerText = "1️⃣ เริ่ม init LIFF";
-    await liff.init({ liffId: LIFF_ID });
-
-    w.innerText = "2️⃣ init ผ่าน";
-
-    if (!liff.isLoggedIn()) {
-      w.innerText = "3️⃣ ยังไม่ login → login";
-      liff.login();
-      return;
-    }
-
-    w.innerText = "4️⃣ กำลังดึง profile";
-    profile = await liff.getProfile();
-
-    w.innerText = "สวัสดีคุณ " + profile.displayName;
-
-  } catch (err) {
-    w.innerText = "❌ LIFF ERROR: " + err.message;
-    console.error(err);
-  }
-};
-
-  /********************************************************
-   * 🟢 กดปุ่ม "จองคิว"
-   * ส่งข้อมูลไปที่ Google Apps Script
-   ********************************************************/
-  async function reserve() {
-    const btn = document.getElementById("reserveBtn");
-    btn.disabled = true;
-    btn.innerText = "กำลังจองคิว...";
-
-    try {
-      // 👇 ตรงนี้แหละที่เรียก GAS
-      const res = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({
-          userId: profile.userId,
-          name: profile.displayName
-        })
-      });
-
-      // รับผลลัพธ์จาก GAS
-    const data = await res.json();
-
-if (data.status === "error") {
+  const result = await res.json();
   document.getElementById("result").innerText =
-    "❌ ERROR จากระบบ:\n" + data.message;
-  return;
+    `คุณได้คิวที่ ${result.queue} เหลืออีก ${result.left} คิว`;
 }
-
-if (data.status === "exists") {
-  document.getElementById("result").innerText =
-    `✅ คุณจองคิวไว้แล้ว
-คิวของคุณคือหมายเลข ${data.queue}
-เหลืออีก ${data.remaining} คิว`;
-
-} else if (data.status === "ok") {
-  document.getElementById("result").innerText =
-    `🎉 จองคิวสำเร็จ
-คุณได้คิวหมายเลข ${data.queue}`;
-
-} else {
-  document.getElementById("result").innerText =
-    "❌ สถานะไม่รู้จักจากระบบ";
-}
-
-
-    btn.disabled = false;
-    btn.innerText = "จองคิว";
-  }
 </script>
-
 </body>
 </html>
