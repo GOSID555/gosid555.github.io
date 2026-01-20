@@ -1,27 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>จองคิว</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<meta charset="UTF-8">
+<title>จองคิว</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
+
 <body>
-  <h2>ระบบจองคิว</h2>
-  <button onclick="reserve()">จองคิว</button>
-  <p id="result"></p>
+<h2 id="status">กำลังโหลด...</h2>
+<button onclick="reserve()">จองคิว</button>
 
 <script>
-const liffId = "LIFF_ID_ของคุณ";
-const apiUrl = "WEB_APP_URL_ของคุณ";
+const LIFF_ID = "2008930440-jI56TpIn";
+const API_URL = "https://script.google.com/macros/s/AKfycbzogYzf46rr1kN2o-NqukmNpPUHGjGyvq-4KGxPySIqXASxP_HJTFgkDObcNF5zYhlS/exec";
 
-window.onload = async () => {
-  await liff.init({ liffId });
-};
+let profile;
+
+async function main() {
+  try {
+    document.getElementById("status").innerText = "เริ่ม LIFF";
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    profile = await liff.getProfile();
+    document.getElementById("status").innerText =
+      "สวัสดี " + profile.displayName;
+
+  } catch (e) {
+    document.getElementById("status").innerText =
+      "ERROR: " + e.message;
+  }
+}
 
 async function reserve() {
-  const profile = await liff.getProfile();
-
-  const res = await fetch(apiUrl, {
+  const res = await fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({
       userId: profile.userId,
@@ -31,14 +48,16 @@ async function reserve() {
 
   const data = await res.json();
 
-  if (data.status === "exists") {
-    document.getElementById("result").innerText =
-      `คุณจองแล้ว\nคิวที่ ${data.queue}\nเหลืออีก ${data.remaining} คิว`;
+  if (data.status === "ok") {
+    alert("คุณได้คิวที่ " + data.queue);
+  } else if (data.status === "exists") {
+    alert("คุณมีคิวแล้ว: " + data.queue);
   } else {
-    document.getElementById("result").innerText =
-      `จองสำเร็จ 🎉\nคุณได้คิวที่ ${data.queue}`;
+    alert("ERROR");
   }
 }
+
+main();
 </script>
 </body>
 </html>
