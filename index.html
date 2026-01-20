@@ -50,18 +50,29 @@
     <h2>📋 ระบบจองคิว</h2>
     <p id="welcome">กำลังโหลด...</p>
 
+    <!-- ปุ่มนี้เรียกฟังก์ชัน reserve() -->
     <button id="reserveBtn" onclick="reserve()">จองคิว</button>
 
     <p id="result"></p>
   </div>
 
 <script>
-  // 🔴 ใส่ของคุณตรงนี้
+  /********************************************************
+   * 🔴 CONFIG ส่วนที่เชื่อมระบบ
+   ********************************************************/
+
+  // LIFF ID จาก LINE Developers
   const LIFF_ID = "2008930440-jI56TpIn";
-  const API_URL = "https://script.google.com/macros/s/AKfycbxvsC4Z_qtBtWJuvJyz7SfvUnG95wjd5mmPpSdn5MjuaiK1BJPMGawSCLpARbjbIU8eDw/exec";
+
+  // 👉 URL นี้คือ Google Apps Script (Backend)
+  // อยู่ที่ Google Sheet → Extensions → Apps Script → Deploy
+  const API_URL = "https://script.google.com/macros/s/AKfycbxdIVEnqTq3phWx9q5EZDRg2U2R1vx67wz6JrkISANSTTOZ0SO-6WWa24mfX7xRSMebyw/exec";
 
   let profile = null;
 
+  /********************************************************
+   * 🔵 เริ่มต้น LIFF
+   ********************************************************/
   window.onload = async () => {
     try {
       await liff.init({ liffId: LIFF_ID });
@@ -71,9 +82,11 @@
         return;
       }
 
+      // ได้ข้อมูลผู้ใช้จาก LINE
       profile = await liff.getProfile();
       document.getElementById("welcome").innerText =
         `สวัสดีคุณ ${profile.displayName}`;
+
     } catch (err) {
       document.getElementById("welcome").innerText =
         "เกิดข้อผิดพลาดในการโหลด LIFF";
@@ -81,12 +94,17 @@
     }
   };
 
+  /********************************************************
+   * 🟢 กดปุ่ม "จองคิว"
+   * ส่งข้อมูลไปที่ Google Apps Script
+   ********************************************************/
   async function reserve() {
     const btn = document.getElementById("reserveBtn");
     btn.disabled = true;
     btn.innerText = "กำลังจองคิว...";
 
     try {
+      // 👇 ตรงนี้แหละที่เรียก GAS
       const res = await fetch(API_URL, {
         method: "POST",
         body: JSON.stringify({
@@ -95,6 +113,7 @@
         })
       });
 
+      // รับผลลัพธ์จาก GAS
       const data = await res.json();
 
       if (data.status === "exists") {
@@ -102,10 +121,12 @@
           `✅ คุณจองคิวไว้แล้ว
 คิวของคุณคือหมายเลข ${data.queue}
 เหลืออีก ${data.remaining} คิว`;
+
       } else if (data.status === "ok") {
         document.getElementById("result").innerText =
           `🎉 จองคิวสำเร็จ
 คุณได้คิวหมายเลข ${data.queue}`;
+
       } else {
         document.getElementById("result").innerText =
           "❌ ไม่สามารถจองคิวได้";
