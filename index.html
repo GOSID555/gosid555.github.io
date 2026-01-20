@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>จองคิว</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+<h2>ระบบจองคิว</h2>
+<button onclick="reserve()">กดจองคิว</button>
+<p id="result"></p>
+
+<script>
+const liffId = "2008930440-81poo7pM";
+const gasUrl = "https://script.google.com/macros/s/AKfycbztahwEdlreeJjo0CiEsgLnmxmizI7xnMZsRgIoEziV7HYN4a9TXjYkkT6JuO1lE0R19A/exec";
+
+async function reserve() {
+  await liff.init({ liffId });
+  const profile = await liff.getProfile();
+
+  const res = await fetch(gasUrl, {
+    method: "POST",
+    body: JSON.stringify({
+      userId: profile.userId,
+      name: profile.displayName
+    })
+  });
+
+  const data = await res.json();
+  document.getElementById("result").innerText =
+    `🎫 คุณได้คิวที่ ${data.queue} | เหลืออีก ${data.left} คิว`;
+}
+</script>
+</body>
+</html>
