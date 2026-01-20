@@ -114,29 +114,30 @@
       });
 
       // รับผลลัพธ์จาก GAS
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.status === "exists") {
-        document.getElementById("result").innerText =
-          `✅ คุณจองคิวไว้แล้ว
+if (data.status === "error") {
+  document.getElementById("result").innerText =
+    "❌ ERROR จากระบบ:\n" + data.message;
+  return;
+}
+
+if (data.status === "exists") {
+  document.getElementById("result").innerText =
+    `✅ คุณจองคิวไว้แล้ว
 คิวของคุณคือหมายเลข ${data.queue}
 เหลืออีก ${data.remaining} คิว`;
 
-      } else if (data.status === "ok") {
-        document.getElementById("result").innerText =
-          `🎉 จองคิวสำเร็จ
+} else if (data.status === "ok") {
+  document.getElementById("result").innerText =
+    `🎉 จองคิวสำเร็จ
 คุณได้คิวหมายเลข ${data.queue}`;
 
-      } else {
-        document.getElementById("result").innerText =
-          "❌ ไม่สามารถจองคิวได้";
-      }
+} else {
+  document.getElementById("result").innerText =
+    "❌ สถานะไม่รู้จักจากระบบ";
+}
 
-    } catch (err) {
-      document.getElementById("result").innerText =
-        "❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบ";
-      console.error(err);
-    }
 
     btn.disabled = false;
     btn.innerText = "จองคิว";
