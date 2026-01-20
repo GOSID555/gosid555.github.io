@@ -73,26 +73,32 @@
   /********************************************************
    * 🔵 เริ่มต้น LIFF
    ********************************************************/
-  window.onload = async () => {
-    try {
-      await liff.init({ liffId: LIFF_ID });
+window.onload = async () => {
+  const welcome = document.getElementById("welcome");
 
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
+  try {
+    welcome.innerText = "⏳ กำลัง init LIFF...";
 
-      // ได้ข้อมูลผู้ใช้จาก LINE
-      profile = await liff.getProfile();
-      document.getElementById("welcome").innerText =
-        `สวัสดีคุณ ${profile.displayName}`;
+    await liff.init({ liffId: LIFF_ID });
 
-    } catch (err) {
-      document.getElementById("welcome").innerText =
-        "เกิดข้อผิดพลาดในการโหลด LIFF";
-      console.error(err);
+    welcome.innerText = "✅ LIFF init แล้ว";
+
+    if (!liff.isLoggedIn()) {
+      welcome.innerText = "➡️ กำลัง login...";
+      liff.login();
+      return;
     }
-  };
+
+    welcome.innerText = "🔍 กำลังดึง profile...";
+    profile = await liff.getProfile();
+
+    welcome.innerText = `สวัสดีคุณ ${profile.displayName}`;
+
+  } catch (err) {
+    welcome.innerText = "❌ LIFF ERROR: " + err.message;
+    console.error(err);
+  }
+};
 
   /********************************************************
    * 🟢 กดปุ่ม "จองคิว"
