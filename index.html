@@ -1,42 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-<meta charset="utf-8">
-<title>จองคิว</title>
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <meta charset="UTF-8" />
+  <title>ระบบจองคิว</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      text-align: center;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #06c755;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+    button:disabled {
+      background: #aaa;
+    }
+    #result {
+      margin-top: 15px;
+      font-size: 16px;
+      white-space: pre-line;
+    }
+  </style>
 </head>
+
 <body>
-<h2>ระบบจองคิว</h2>
-<button onclick="reserve()">กดจองคิว</button>
-<p id="result"></p>
+  <div class="card">
+    <h2>📋 ระบบจองคิว</h2>
+    <p id="welcome">กำลังโหลด...</p>
+
+    <button id="reserveBtn" onclick="reserve()">จองคิว</button>
+
+    <p id="result"></p>
+  </div>
 
 <script>
-const liffId = "2008930440-81poo7pM";
-const gasUrl = "https://script.google.com/macros/s/AKfycbztahwEdlreeJjo0CiEsgLnmxmizI7xnMZsRgIoEziV7HYN4a9TXjYkkT6JuO1lE0R19A/exec";
+  // 🔴 ใส่ของคุณตรงนี้
+  const LIFF_ID = "2008930440-jI56TpIn";
+  const API_URL = "https://script.google.com/macros/s/AKfycbxdIVEnqTq3phWx9q5EZDRg2U2R1vx67wz6JrkISANSTTOZ0SO-6WWa24mfX7xRSMebyw/exec";
 
+  let profile = null;
 
-window.onload = async () => {
-  await liff.init({ liffId });
-};
+  window.onload = async () => {
+    try {
+      await liff.init({ liffId: LIFF_ID });
 
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
 
+      profile = await liff.getProfile();
+      document.getElementById("welcome").innerText =
+        `สวัสดีคุณ ${profile.displayName}`;
+    } catch (err) {
+      document.getElementById("welcome").innerText =
+        "เกิดข้อผิดพลาดในการโหลด LIFF";
+      console.error(err);
+    }
+  };
 
-async function reserve() {
-  await liff.init({ liffId });
-  const profile = await liff.getProfile();
+  async function reserve() {
+    const btn = document.getElementById("reserveBtn");
+    btn.disabled = true;
+    btn.innerText = "กำลังจองคิว...";
 
-  const res = await fetch(gasUrl, {
-    method: "POST",
-    body: JSON.stringify({
-      userId: profile.userId,
-      name: profile.displayName
-    })
-  });
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          userId: profile.userId,
+          name: profile.displayName
+        })
+      });
 
-  const data = await res.json();
-  document.getElementById("result").innerText =
-    `🎫 คุณได้คิวที่ ${data.queue} | เหลืออีก ${data.left} คิว`;
-}
+      const data = await res.json();
+
+      if (data.status === "exists") {
+        document.getElementById("result").innerText =
+          `✅ คุณจองคิวไว้แล้ว
+คิวของคุณคือหมายเลข ${data.queue}
+เหลืออีก ${data.remaining} คิว`;
+      } else if (data.status === "ok") {
+        document.getElementById("result").innerText =
+          `🎉 จองคิวสำเร็จ
+คุณได้คิวหมายเลข ${data.queue}`;
+      } else {
+        document.getElementById("result").innerText =
+          "❌ ไม่สามารถจองคิวได้";
+      }
+
+    } catch (err) {
+      document.getElementById("result").innerText =
+        "❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบ";
+      console.error(err);
+    }
+
+    btn.disabled = false;
+    btn.innerText = "จองคิว";
+  }
 </script>
+
 </body>
 </html>
