@@ -14,6 +14,13 @@
 const liffId = "2008930440-81poo7pM";
 const gasUrl = "https://script.google.com/macros/s/AKfycbztahwEdlreeJjo0CiEsgLnmxmizI7xnMZsRgIoEziV7HYN4a9TXjYkkT6JuO1lE0R19A/exec";
 
+
+window.onload = async () => {
+  await liff.init({ liffId });
+};
+
+
+
 async function reserve() {
   await liff.init({ liffId });
   const profile = await liff.getProfile();
