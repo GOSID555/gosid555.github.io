@@ -38,46 +38,9 @@ async function main() {
   }
 }
 
-async function reserve() {
-  const result = document.getElementById("result");
-  const btn = document.getElementById("reserveBtn");
-
-  btn.disabled = true;
-  btn.innerText = "กำลังจองคิว...";
-  result.innerText = "⏳ เริ่มส่งข้อมูลไปที่ระบบ...";
-
-  try {
-    console.log("👉 sending data", profile.userId, profile.displayName);
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userId: profile.userId,
-        name: profile.displayName
-      })
-    });
-
-    result.innerText = "📡 ได้รับ response แล้ว กำลังแปลงข้อมูล...";
-
-    const text = await res.text();
-    console.log("RAW RESPONSE:", text);
-
-    const data = JSON.parse(text);
-
-    result.innerText = "📦 DATA:\n" + JSON.stringify(data, null, 2);
-
-  } catch (err) {
-    console.error(err);
-    result.innerText = "❌ JS ERROR:\n" + err.message;
-  }
-
-  btn.disabled = false;
-  btn.innerText = "จองคิว";
+function reserve() {
+  alert("เข้า reserve แล้ว");
 }
-
 
 
 main();
