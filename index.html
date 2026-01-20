@@ -74,28 +74,27 @@
    * 🔵 เริ่มต้น LIFF
    ********************************************************/
 window.onload = async () => {
-  const welcome = document.getElementById("welcome");
+  const w = document.getElementById("welcome");
 
   try {
-    welcome.innerText = "⏳ กำลัง init LIFF...";
-
+    w.innerText = "1️⃣ เริ่ม init LIFF";
     await liff.init({ liffId: LIFF_ID });
 
-    welcome.innerText = "✅ LIFF init แล้ว";
+    w.innerText = "2️⃣ init ผ่าน";
 
     if (!liff.isLoggedIn()) {
-      welcome.innerText = "➡️ กำลัง login...";
+      w.innerText = "3️⃣ ยังไม่ login → login";
       liff.login();
       return;
     }
 
-    welcome.innerText = "🔍 กำลังดึง profile...";
+    w.innerText = "4️⃣ กำลังดึง profile";
     profile = await liff.getProfile();
 
-    welcome.innerText = `สวัสดีคุณ ${profile.displayName}`;
+    w.innerText = "สวัสดีคุณ " + profile.displayName;
 
   } catch (err) {
-    welcome.innerText = "❌ LIFF ERROR: " + err.message;
+    w.innerText = "❌ LIFF ERROR: " + err.message;
     console.error(err);
   }
 };
