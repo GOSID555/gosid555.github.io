@@ -1,63 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <style>
-    body { font-family: sans-serif; background:#f5f5f5; }
-    .card { background:#fff; padding:20px; margin:20px auto; width:400px; border-radius:10px; }
-    button { padding:10px; margin:5px; }
-  </style>
+<meta charset="UTF-8">
+<title>Admin Queue</title>
+
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f5f5f5;
+  }
+  .card {
+    background: #fff;
+    padding: 20px;
+    margin: 60px auto;
+    width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.1);
+  }
+  input {
+    width: 95%;
+    padding: 10px;
+    margin: 5px 0;
+  }
+  button {
+    padding: 10px 15px;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+  pre {
+    background: #111;
+    color: #0f0;
+    padding: 10px;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow: auto;
+  }
+</style>
 </head>
+
 <body>
 
-<div class="card" id="login">
-  <h2>Admin Login</h2>
-  <input id="user" placeholder="username"><br><br>
-  <input id="pass" type="password" placeholder="password"><br><br>
+<!-- LOGIN -->
+<div class="card" id="loginBox">
+  <h2>🔐 Admin Login</h2>
+  <input id="user" placeholder="username">
+  <input id="pass" type="password" placeholder="password">
   <button onclick="login()">Login</button>
+  <p id="msg"></p>
 </div>
 
+<!-- DASHBOARD -->
 <div class="card" id="dashboard" style="display:none">
-  <h2>Queue Dashboard</h2>
+  <h2>📊 Queue Dashboard</h2>
   <button onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
+  <button onclick="loadQueue()">🔄 รีเฟรช</button>
   <pre id="queue"></pre>
 </div>
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw6arQXG6g2EW7QmNVtJ3np5yGbfYBwNS5nlPcaocBOtZcXL4crH6NwV0XP_0r7UmNf/exec";
 
+// shorthand
+const el = id => document.getElementById(id);
+
 function login() {
   fetch(GAS_URL, {
-    method:"POST",
-    body:JSON.stringify({
-      action:"login",
-      user: user.value,
-      pass: pass.value
+    method: "POST",
+    body: JSON.stringify({
+      action: "login",
+      user: el("user").value,
+      pass: el("pass").value
     })
-  }).then(r=>r.json()).then(res=>{
-    if(res.status==="ok"){
-      login.style.display="none";
-      dashboard.style.display="block";
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "ok") {
+      el("loginBox").style.display = "none";
+      el("dashboard").style.display = "block";
       loadQueue();
     } else {
-      alert("Login fail");
+      el("msg").innerText = "❌ Username หรือ Password ไม่ถูกต้อง";
     }
   })
+  .catch(err => {
+    el("msg").innerText = err.message;
+  });
 }
 
-function loadQueue(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"getQueue"})
-  }).then(r=>r.json()).then(d=>{
-    queue.innerText = JSON.stringify(d,null,2);
+function loadQueue() {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "getQueue" })
   })
+  .then(r => r.json())
+  .then(data => {
+    el("queue").innerText = JSON.stringify(data, null, 2);
+  });
 }
 
-function nextQueue(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"nextQueue"})
-  }).then(()=>loadQueue());
+function nextQueue() {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "nextQueue" })
+  })
+  .then(() => loadQueue());
 }
 </script>
 
