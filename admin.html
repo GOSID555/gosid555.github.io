@@ -181,8 +181,9 @@ function loadQueue() {
   })
   .then(r => r.json())
   .then(d => {
-    current.innerText = d.current;
-    next.innerText = d.next;
+    current.innerText = d.current ?? "-";
+    next.innerText = d.next ?? "-";
+    total.innerText = d.total ?? 0;   // ✅ บรรทัดนี้แหละ
 
     list.innerHTML = "";
     d.list.forEach(q => {
@@ -196,6 +197,8 @@ function loadQueue() {
       `;
     });
   });
+}
+
 }
 
 /* -------- NEXT -------- */
