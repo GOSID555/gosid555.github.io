@@ -2,177 +2,181 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Queue Admin</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+<title>Queue Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
-  font-family:'Prompt',sans-serif;
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  margin:0;
-  min-height:100vh;
-}
+  body {
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg,#6a7cff,#8f9cff);
+    margin: 0;
+    padding: 40px;
+  }
 
-/* Card */
-.card{
-  background:#fff;
-  border-radius:16px;
-  padding:24px;
-  max-width:420px;
-  margin:60px auto;
-  box-shadow:0 20px 40px rgba(0,0,0,.2);
-}
+  .card {
+    background: #fff;
+    max-width: 900px;
+    margin: auto;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  }
 
-/* Login */
-input{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:1px solid #ddd;
-  margin-bottom:12px;
-  font-size:15px;
-}
+  h1 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-button{
-  border:none;
-  border-radius:12px;
-  padding:12px;
-  width:100%;
-  font-size:16px;
-  cursor:pointer;
-}
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 15px;
+    margin: 20px 0;
+  }
 
-.btn-primary{
-  background:#667eea;
-  color:#fff;
-}
+  .box {
+    background: #f6f8ff;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
 
-.btn-primary:hover{opacity:.9}
+  .box h2 {
+    margin: 0;
+    font-size: 36px;
+  }
 
-/* Dashboard */
-.dashboard{
-  max-width:900px;
-}
+  .actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
 
-/* Stat cards */
-.stats{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:16px;
-}
+  button {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #fff;
+  }
 
-.stat{
-  background:#f7f8ff;
-  border-radius:16px;
-  padding:20px;
-}
+  .btn-next { background: #22c55e; }
+  .btn-skip { background: #f97316; }
+  .btn-refresh { background: #3b82f6; }
 
-.stat h3{
-  margin:0;
-  color:#555;
-  font-size:14px;
-}
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
 
-.stat .num{
-  font-size:32px;
-  font-weight:600;
-  margin-top:8px;
-}
+  th, td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+  }
 
-/* Action buttons */
-.actions{
-  display:flex;
-  gap:12px;
-  margin-top:20px;
-}
+  th {
+    background: #f0f3ff;
+  }
 
-.actions button{
-  flex:1;
-}
+  .login {
+    max-width: 400px;
+    margin: auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  }
 
-.btn-next{background:#4caf50;color:#fff;}
-.btn-skip{background:#ff9800;color:#fff;}
-.btn-refresh{background:#2196f3;color:#fff;}
+  input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+  }
 
-/* Queue list */
-.queue-list{
-  margin-top:20px;
-  background:#111;
-  color:#0f0;
-  padding:16px;
-  border-radius:12px;
-  max-height:300px;
-  overflow:auto;
-  font-size:14px;
-}
+  .hidden { display: none; }
 </style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-<div class="card" id="loginBox">
+<div class="login" id="loginBox">
   <h2>🔐 Admin Login</h2>
-  <input id="user" placeholder="Username">
-  <input id="pass" type="password" placeholder="Password">
-  <button class="btn-primary" onclick="login()">เข้าสู่ระบบ</button>
-  <p id="msg"></p>
+  <input id="user" placeholder="username">
+  <input id="pass" type="password" placeholder="password">
+  <button class="btn-next" onclick="login()">Login</button>
 </div>
 
 <!-- DASHBOARD -->
-<div class="card dashboard" id="dashboard" style="display:none">
-  <h2>📊 Queue Dashboard</h2>
+<div class="card hidden" id="dashboard">
+  <h1>📊 Queue Dashboard</h1>
 
-  <div class="stats">
-    <div class="stat">
-      <h3>คิวปัจจุบัน</h3>
-      <div class="num" id="currentQ">-</div>
+  <div class="grid">
+    <div class="box">
+      <p>คิวปัจจุบัน</p>
+      <h2 id="currentQ">-</h2>
     </div>
-    <div class="stat">
-      <h3>คิวถัดไป</h3>
-      <div class="num" id="nextQ">-</div>
+    <div class="box">
+      <p>คิวถัดไป</p>
+      <h2 id="nextQ">-</h2>
     </div>
-    <div class="stat">
-      <h3>จำนวนคิวทั้งหมด</h3>
-      <div class="num" id="totalQ">-</div>
+    <div class="box">
+      <p>จำนวนคิวทั้งหมด</p>
+      <h2 id="totalQ">0</h2>
     </div>
   </div>
 
   <div class="actions">
-    <button class="btn-next" onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
+    <button class="btn-next" onclick="nextQueue()">▶ เรียกคิว</button>
     <button class="btn-skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
     <button class="btn-refresh" onclick="loadQueue()">🔄 รีเฟรช</button>
   </div>
 
-  <div class="queue-list" id="queue"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Queue</th>
+        <th>Name</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="queueTable"></tbody>
+  </table>
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzCDygu3sj24WQueI6CtxgP6snMxW2QCuAHVKPuZlqQnfpHsVkJBip7J4zmGsER6wbY/exec";
-const el = id => document.getElementById(id);
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxVdd3Ct3TkLieSglxXcXwNfsAu5UvVnMnCTbxoDW9iEBz01A-966dls7GOGTbMDCUG/exec";
 
+/* ================= LOGIN ================= */
 function login(){
   fetch(GAS_URL,{
     method:"POST",
     body:JSON.stringify({
       action:"login",
-      user:el("user").value,
-      pass:el("pass").value
+      user:user.value,
+      pass:pass.value
     })
   })
   .then(r=>r.json())
   .then(res=>{
     if(res.status==="ok"){
-      el("loginBox").style.display="none";
-      el("dashboard").style.display="block";
+      loginBox.classList.add("hidden");
+      dashboard.classList.remove("hidden");
       loadQueue();
-    }else{
-      el("msg").innerText="❌ Login ไม่ถูกต้อง";
+    } else {
+      alert("รหัสไม่ถูกต้อง");
     }
-  })
+  });
 }
 
+/* ================= LOAD QUEUE ================= */
 function loadQueue(){
   fetch(GAS_URL,{
     method:"POST",
@@ -180,13 +184,23 @@ function loadQueue(){
   })
   .then(r=>r.json())
   .then(d=>{
-    el("queue").innerText = JSON.stringify(d.list,null,2);
-    el("currentQ").innerText = d.current || "-";
-    el("nextQ").innerText = d.next || "-";
-    el("totalQ").innerText = d.total || 0;
-  })
+    currentQ.innerText = d.current || "-";
+    nextQ.innerText = d.next || "-";
+    totalQ.innerText = d.total || 0;
+
+    queueTable.innerHTML = "";
+    d.list.forEach(q=>{
+      queueTable.innerHTML += `
+        <tr>
+          <td>${q.queue}</td>
+          <td>${q.name}</td>
+          <td>${q.status}</td>
+        </tr>`;
+    });
+  });
 }
 
+/* ================= ACTIONS ================= */
 function nextQueue(){
   fetch(GAS_URL,{
     method:"POST",
