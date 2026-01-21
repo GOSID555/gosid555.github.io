@@ -1,129 +1,63 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Admin Queue</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body {
-  font-family: system-ui;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  margin:0;
-}
-.card {
-  background:#fff;
-  padding:24px;
-  border-radius:16px;
-  width:320px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,.2);
-}
-input,button {
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border-radius:10px;
-  border:1px solid #ddd;
-  font-size:16px;
-}
-button {
-  border:none;
-  cursor:pointer;
-}
-.login-btn { background:#4f46e5; color:#fff; }
-.next { background:#22c55e; color:#fff; }
-.skip { background:#ef4444; color:#fff; }
-.queue {
-  font-size:48px;
-  margin:20px 0;
-  font-weight:bold;
-  color:#4f46e5;
-}
-.status {
-  font-size:14px;
-  color:#666;
-}
-</style>
+  <style>
+    body { font-family: sans-serif; background:#f5f5f5; }
+    .card { background:#fff; padding:20px; margin:20px auto; width:400px; border-radius:10px; }
+    button { padding:10px; margin:5px; }
+  </style>
 </head>
-
 <body>
 
-<div class="card">
+<div class="card" id="login">
+  <h2>Admin Login</h2>
+  <input id="user" placeholder="username"><br><br>
+  <input id="pass" type="password" placeholder="password"><br><br>
+  <button onclick="login()">Login</button>
+</div>
 
-  <!-- LOGIN -->
-  <div id="login">
-    <h2>🔐 Admin Login</h2>
-    <input id="username" placeholder="username">
-    <input id="password" type="password" placeholder="password">
-    <button class="login-btn" onclick="login()">Login</button>
-  </div>
-
-  <!-- ADMIN -->
-  <div id="admin" style="display:none;">
-    <h2>🎫 Queue</h2>
-    <div class="queue" id="queue">-</div>
-    <button class="next" onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
-    <button class="skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
-    <div class="status" id="status"></div>
-  </div>
-
+<div class="card" id="dashboard" style="display:none">
+  <h2>Queue Dashboard</h2>
+  <button onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
+  <pre id="queue"></pre>
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzf-pdekaEPyOfkFcMOl9ANj3yeGwWQbvbDJjpkiAW2ej2ByMNHTg5T6kG9-BzguSLu/exec";
-let token = "";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyKc5Ps9ngxsCaeY_IfYrHa7ayOjglxqtO9CVXl7eNB99m6Y7JxVk8LHISq0dgaK1Xh/exec";
 
-function setStatus(msg){
-  document.getElementById("status").innerText = msg;
-}
-
-function login(){
-  fetch(GAS_URL,{
+function login() {
+  fetch(GAS_URL, {
     method:"POST",
     body:JSON.stringify({
       action:"login",
-      username:username.value,
-      password:password.value
+      user: user.value,
+      pass: pass.value
     })
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.status==="ok"){
-      token = d.token;
+  }).then(r=>r.json()).then(res=>{
+    if(res.status==="ok"){
       login.style.display="none";
-      admin.style.display="block";
-    }else{
-      alert("รหัสไม่ถูกต้อง");
+      dashboard.style.display="block";
+      loadQueue();
+    } else {
+      alert("Login fail");
     }
-  });
+  })
 }
 
-function nextQueue(){ send("next"); }
-function skipQueue(){ send("skip"); }
-
-function send(action){
-  setStatus("กำลังดำเนินการ...");
+function loadQueue(){
   fetch(GAS_URL,{
     method:"POST",
-    body:JSON.stringify({ action, token })
+    body:JSON.stringify({action:"getQueue"})
+  }).then(r=>r.json()).then(d=>{
+    queue.innerText = JSON.stringify(d,null,2);
   })
-  .then(r=>r.json())
-  .then(d=>{
-    if(d.queue !== null){
-      queue.innerText = d.queue ?? "-";
-      setStatus("เรียบร้อย");
-    }else{
-      setStatus("ไม่มีคิวแล้ว");
-    }
-  })
-  .catch(()=>{
-    setStatus("เชื่อมต่อไม่ได้");
-  });
+}
+
+function nextQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"nextQueue"})
+  }).then(()=>loadQueue());
 }
 </script>
 
