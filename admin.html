@@ -2,15 +2,14 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Queue Admin Dashboard</title>
+<title>Queue Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg,#00c853,#64dd17);
-  min-height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+  background: #e5e7eb;
 }
 
 .container {
@@ -20,75 +19,83 @@ body {
 }
 
 .card {
-  background: #fff;
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,.1);
 }
 
-h1,h2 {
-  text-align: center;
+h1, h2 {
   margin-top: 0;
+  text-align: center;
+  color: #111827;
 }
 
 input {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
-  font-size: 16px;
   border-radius: 8px;
-  border: 1px solid #ccc;
+  border: 1px solid #d1d5db;
+  font-size: 15px;
 }
 
 button {
   width: 100%;
   padding: 14px;
   margin-top: 12px;
-  font-size: 16px;
-  border: none;
   border-radius: 10px;
+  border: none;
+  font-size: 15px;
   font-weight: bold;
   cursor: pointer;
 }
 
-.btn-main { background:#00c853; color:#fff; }
-.btn-skip { background:#ff7043; color:#fff; }
+.btn-main {
+  background: #374151;
+  color: #fff;
+}
+
+.btn-skip {
+  background: #9ca3af;
+  color: #111;
+}
 
 .queue-box {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin: 15px 0;
 }
 
 .queue-item {
   flex: 1;
-  background: #f5f5f5;
+  background: #f3f4f6;
   border-radius: 12px;
   padding: 12px;
   text-align: center;
 }
 
 .queue-item small {
-  color: #666;
+  color: #6b7280;
 }
 
 .queue-item h3 {
-  margin: 5px 0 0;
+  margin: 6px 0 0;
   font-size: 22px;
+  color: #111827;
 }
 
 .list {
+  margin-top: 10px;
   max-height: 220px;
   overflow-y: auto;
-  margin-top: 10px;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   padding: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
 }
 
@@ -98,8 +105,8 @@ button {
   font-size: 12px;
 }
 
-.wait { background:#fff9c4; }
-.call { background:#c8e6c9; }
+.wait { background:#fde68a; }
+.call { background:#86efac; }
 </style>
 </head>
 
@@ -109,7 +116,7 @@ button {
 
 <!-- LOGIN -->
 <div class="card" id="loginBox">
-  <h1> Admin Login</h1>
+  <h1>Admin Login</h1>
   <input id="user" placeholder="Username">
   <input id="pass" type="password" placeholder="Password">
   <button class="btn-main" onclick="login()">Login</button>
@@ -117,7 +124,7 @@ button {
 
 <!-- DASHBOARD -->
 <div class="card" id="dashBox" style="display:none">
-  <h2>📋 Queue Dashboard</h2>
+  <h2>Queue Dashboard</h2>
 
   <div class="queue-box">
     <div class="queue-item">
@@ -145,50 +152,51 @@ button {
 </div>
 
 <script>
-/* 🔴 ใส่ GAS URL ของคุณ */
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzgtj8N07UJL5T317bRh-ExD3sf0V7WlOpsWJSj6CSb293I9YqJolAA81lpxzF8Ltnd/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzLpYZsCxr1Hd9Knsp_fBFLQ6PhqQFl4YjnDOPhE3HugxFVgVzSY6IlaEYT7NzhzCIn/exec";
 
-/* -------- LOGIN -------- */
-function login() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "login",
-      user: user.value,
-      pass: pass.value
+/* ---------- LOGIN ---------- */
+function login(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"login",
+      user:user.value,
+      pass:pass.value
     })
   })
-  .then(r => r.json())
-  .then(res => {
-    if (res.status === "ok") {
-      loginBox.style.display = "none";
-      dashBox.style.display = "block";
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.status==="ok"){
+      loginBox.style.display="none";
+      dashBox.style.display="block";
       loadQueue();
-      setInterval(loadQueue, 3000);
+      setInterval(loadQueue,3000);
     } else {
-      alert("❌ รหัสไม่ถูกต้อง");
+      alert("รหัสไม่ถูกต้อง");
     }
   });
 }
 
-/* -------- LOAD QUEUE -------- */
-function loadQueue() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "getQueue" })
+/* ---------- LOAD QUEUE ---------- */
+function loadQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"getQueue"})
   })
-  .then(r => r.json())
-  .then(d => {
+  .then(r=>r.json())
+  .then(d=>{
+    console.log("QUEUE DATA", d); // 🔍 debug
+
     current.innerText = d.current ?? "-";
     next.innerText = d.next ?? "-";
     total.innerText = d.total ?? 0;
 
     list.innerHTML = "";
-    d.list.forEach(q => {
+    (d.list || []).forEach(q=>{
       list.innerHTML += `
         <div class="row">
           <div>#${q.queue} ${q.name}</div>
-          <span class="status ${q.status === "กำลังเรียก" ? "call" : "wait"}">
+          <span class="status ${q.status==="กำลังเรียก"?"call":"wait"}">
             ${q.status}
           </span>
         </div>
@@ -197,19 +205,18 @@ function loadQueue() {
   });
 }
 
-/* -------- NEXT QUEUE -------- */
-function nextQueue() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "nextQueue" })
+/* ---------- ACTIONS ---------- */
+function nextQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"nextQueue"})
   }).then(loadQueue);
 }
 
-/* -------- SKIP QUEUE -------- */
-function skipQueue() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "skipQueue" })
+function skipQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"skipQueue"})
   }).then(loadQueue);
 }
 </script>
