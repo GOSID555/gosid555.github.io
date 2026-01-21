@@ -2,39 +2,110 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Admin Queue</title>
+<title>Queue Admin</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-  body {
-    font-family: sans-serif;
-    background: #f5f5f5;
-  }
-  .card {
-    background: #fff;
-    padding: 20px;
-    margin: 60px auto;
-    width: 400px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.1);
-  }
-  input {
-    width: 95%;
-    padding: 10px;
-    margin: 5px 0;
-  }
-  button {
-    padding: 10px 15px;
-    margin-top: 10px;
-    cursor: pointer;
-  }
-  pre {
-    background: #111;
-    color: #0f0;
-    padding: 10px;
-    border-radius: 6px;
-    max-height: 300px;
-    overflow: auto;
-  }
+body{
+  font-family:'Prompt',sans-serif;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  margin:0;
+  min-height:100vh;
+}
+
+/* Card */
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:24px;
+  max-width:420px;
+  margin:60px auto;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
+}
+
+/* Login */
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  margin-bottom:12px;
+  font-size:15px;
+}
+
+button{
+  border:none;
+  border-radius:12px;
+  padding:12px;
+  width:100%;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.btn-primary{
+  background:#667eea;
+  color:#fff;
+}
+
+.btn-primary:hover{opacity:.9}
+
+/* Dashboard */
+.dashboard{
+  max-width:900px;
+}
+
+/* Stat cards */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px;
+}
+
+.stat{
+  background:#f7f8ff;
+  border-radius:16px;
+  padding:20px;
+}
+
+.stat h3{
+  margin:0;
+  color:#555;
+  font-size:14px;
+}
+
+.stat .num{
+  font-size:32px;
+  font-weight:600;
+  margin-top:8px;
+}
+
+/* Action buttons */
+.actions{
+  display:flex;
+  gap:12px;
+  margin-top:20px;
+}
+
+.actions button{
+  flex:1;
+}
+
+.btn-next{background:#4caf50;color:#fff;}
+.btn-skip{background:#ff9800;color:#fff;}
+.btn-refresh{background:#2196f3;color:#fff;}
+
+/* Queue list */
+.queue-list{
+  margin-top:20px;
+  background:#111;
+  color:#0f0;
+  padding:16px;
+  border-radius:12px;
+  max-height:300px;
+  overflow:auto;
+  font-size:14px;
+}
 </style>
 </head>
 
@@ -43,67 +114,91 @@
 <!-- LOGIN -->
 <div class="card" id="loginBox">
   <h2>🔐 Admin Login</h2>
-  <input id="user" placeholder="username">
-  <input id="pass" type="password" placeholder="password">
-  <button onclick="login()">Login</button>
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+  <button class="btn-primary" onclick="login()">เข้าสู่ระบบ</button>
   <p id="msg"></p>
 </div>
 
 <!-- DASHBOARD -->
-<div class="card" id="dashboard" style="display:none">
+<div class="card dashboard" id="dashboard" style="display:none">
   <h2>📊 Queue Dashboard</h2>
-  <button onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
-  <button onclick="loadQueue()">🔄 รีเฟรช</button>
-  <pre id="queue"></pre>
+
+  <div class="stats">
+    <div class="stat">
+      <h3>คิวปัจจุบัน</h3>
+      <div class="num" id="currentQ">-</div>
+    </div>
+    <div class="stat">
+      <h3>คิวถัดไป</h3>
+      <div class="num" id="nextQ">-</div>
+    </div>
+    <div class="stat">
+      <h3>จำนวนคิวทั้งหมด</h3>
+      <div class="num" id="totalQ">-</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-next" onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
+    <button class="btn-skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
+    <button class="btn-refresh" onclick="loadQueue()">🔄 รีเฟรช</button>
+  </div>
+
+  <div class="queue-list" id="queue"></div>
 </div>
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbw6arQXG6g2EW7QmNVtJ3np5yGbfYBwNS5nlPcaocBOtZcXL4crH6NwV0XP_0r7UmNf/exec";
-
-// shorthand
 const el = id => document.getElementById(id);
 
-function login() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "login",
-      user: el("user").value,
-      pass: el("pass").value
+function login(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"login",
+      user:el("user").value,
+      pass:el("pass").value
     })
   })
-  .then(r => r.json())
-  .then(res => {
-    if (res.status === "ok") {
-      el("loginBox").style.display = "none";
-      el("dashboard").style.display = "block";
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.status==="ok"){
+      el("loginBox").style.display="none";
+      el("dashboard").style.display="block";
       loadQueue();
-    } else {
-      el("msg").innerText = "❌ Username หรือ Password ไม่ถูกต้อง";
+    }else{
+      el("msg").innerText="❌ Login ไม่ถูกต้อง";
     }
   })
-  .catch(err => {
-    el("msg").innerText = err.message;
-  });
 }
 
-function loadQueue() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "getQueue" })
+function loadQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"getQueue"})
   })
-  .then(r => r.json())
-  .then(data => {
-    el("queue").innerText = JSON.stringify(data, null, 2);
-  });
+  .then(r=>r.json())
+  .then(d=>{
+    el("queue").innerText = JSON.stringify(d.list,null,2);
+    el("currentQ").innerText = d.current || "-";
+    el("nextQ").innerText = d.next || "-";
+    el("totalQ").innerText = d.total || 0;
+  })
 }
 
-function nextQueue() {
-  fetch(GAS_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "nextQueue" })
-  })
-  .then(() => loadQueue());
+function nextQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"nextQueue"})
+  }).then(()=>loadQueue());
+}
+
+function skipQueue(){
+  fetch(GAS_URL,{
+    method:"POST",
+    body:JSON.stringify({action:"skipQueue"})
+  }).then(()=>loadQueue());
 }
 </script>
 
