@@ -121,16 +121,23 @@ button {
 <div class="card" id="dashBox" style="display:none">
   <h2>📋 Queue Dashboard</h2>
 
-  <div class="queue-box">
-    <div class="queue-item">
-      <small>กำลังเรียก</small>
-      <h3 id="current">-</h3>
-    </div>
-    <div class="queue-item">
-      <small>คิวถัดไป</small>
-      <h3 id="next">-</h3>
-    </div>
+ <div class="queue-box">
+  <div class="queue-item">
+    <small>กำลังเรียก</small>
+    <h3 id="current">-</h3>
   </div>
+
+  <div class="queue-item">
+    <small>คิวถัดไป</small>
+    <h3 id="next">-</h3>
+  </div>
+
+  <div class="queue-item">
+    <small>คิวทั้งหมด</small>
+    <h3 id="total">0</h3>
+  </div>
+</div>
+
 
   <button class="btn-main" onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
   <button class="btn-skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
