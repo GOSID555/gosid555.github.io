@@ -2,217 +2,209 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Queue Admin Dashboard</title>
+<title>Admin Queue Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body {
-    font-family: system-ui, sans-serif;
-    background: linear-gradient(135deg,#6a7cff,#8f9cff);
-    margin: 0;
-    padding: 40px;
-  }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #00c853, #64dd17);
+  min-height: 100vh;
+}
 
-  .card {
-    background: #fff;
-    max-width: 900px;
-    margin: auto;
-    padding: 25px;
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.15);
-  }
+.container {
+  max-width: 420px;
+  margin: auto;
+  padding: 20px;
+}
 
-  h1 {
-    margin-top: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+}
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3,1fr);
-    gap: 15px;
-    margin: 20px 0;
-  }
+h1,h2 {
+  text-align: center;
+  margin-top: 0;
+}
 
-  .box {
-    background: #f6f8ff;
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
-  }
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
 
-  .box h2 {
-    margin: 0;
-    font-size: 36px;
-  }
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+}
 
-  .actions {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
+.btn-main {
+  background: #00c853;
+  color: #fff;
+}
 
-  button {
-    flex: 1;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    cursor: pointer;
-    color: #fff;
-  }
+.btn-skip {
+  background: #ff7043;
+  color: #fff;
+}
 
-  .btn-next { background: #22c55e; }
-  .btn-skip { background: #f97316; }
-  .btn-refresh { background: #3b82f6; }
+.queue-box {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+.queue-item {
+  flex: 1;
+  background: #f5f5f5;
+  margin: 0 5px;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+}
 
-  th, td {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-  }
+.queue-item h3 {
+  margin: 5px 0;
+}
 
-  th {
-    background: #f0f3ff;
-  }
+.list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
 
-  .login {
-    max-width: 400px;
-    margin: auto;
-    background: #fff;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.15);
-  }
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
 
-  input {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-  }
+.status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
 
-  .hidden { display: none; }
+.wait { background: #fff9c4; }
+.call { background: #c8e6c9; }
 </style>
 </head>
 
 <body>
 
+<div class="container">
+
 <!-- LOGIN -->
-<div class="login" id="loginBox">
-  <h2>🔐 Admin Login</h2>
-  <input id="user" placeholder="username">
-  <input id="pass" type="password" placeholder="password">
-  <button class="btn-next" onclick="login()">Login</button>
+<div class="card" id="loginBox">
+  <h1>🔐 Admin Login</h1>
+  <input id="user" placeholder="Username">
+  <input id="pass" type="password" placeholder="Password">
+  <button class="btn-main" onclick="login()">Login</button>
 </div>
 
 <!-- DASHBOARD -->
-<div class="card hidden" id="dashboard">
-  <h1>📊 Queue Dashboard</h1>
+<div class="card" id="dashBox" style="display:none">
+  <h2>📋 Queue Dashboard</h2>
 
-  <div class="grid">
-    <div class="box">
-      <p>คิวปัจจุบัน</p>
-      <h2 id="currentQ">-</h2>
+  <div class="queue-box">
+    <div class="queue-item">
+      <small>กำลังเรียก</small>
+      <h3 id="current">-</h3>
     </div>
-    <div class="box">
-      <p>คิวถัดไป</p>
-      <h2 id="nextQ">-</h2>
-    </div>
-    <div class="box">
-      <p>จำนวนคิวทั้งหมด</p>
-      <h2 id="totalQ">0</h2>
+    <div class="queue-item">
+      <small>คิวถัดไป</small>
+      <h3 id="next">-</h3>
     </div>
   </div>
 
-  <div class="actions">
-    <button class="btn-next" onclick="nextQueue()">▶ เรียกคิว</button>
-    <button class="btn-skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
-    <button class="btn-refresh" onclick="loadQueue()">🔄 รีเฟรช</button>
-  </div>
+  <button class="btn-main" onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
+  <button class="btn-skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Queue</th>
-        <th>Name</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="queueTable"></tbody>
-  </table>
+  <div class="list" id="list"></div>
+</div>
+
 </div>
 
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzZfnZqLHIUjU4en3zk-LfuxQruWI0PzfpBMdPN9elPWDtc-qtB4RmTDsPEOtTqAwhp/exec";
 
-/* ================= LOGIN ================= */
-function login(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"login",
-      user:user.value,
-      pass:pass.value
+/* -------- LOGIN -------- */
+function login() {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "login",
+      user: user.value,
+      pass: pass.value
     })
   })
-  .then(r=>r.json())
-  .then(res=>{
-    if(res.status==="ok"){
-      loginBox.classList.add("hidden");
-      dashboard.classList.remove("hidden");
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "ok") {
+      loginBox.style.display = "none";
+      dashBox.style.display = "block";
       loadQueue();
+      setInterval(loadQueue, 3000);
     } else {
-      alert("รหัสไม่ถูกต้อง");
+      alert("❌ รหัสไม่ถูกต้อง");
     }
   });
 }
 
-/* ================= LOAD QUEUE ================= */
-function loadQueue(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"getQueue"})
+/* -------- LOAD QUEUE -------- */
+function loadQueue() {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "getQueue" })
   })
-  .then(r=>r.json())
-  .then(d=>{
-    currentQ.innerText = d.current || "-";
-    nextQ.innerText = d.next || "-";
-    totalQ.innerText = d.total || 0;
+  .then(r => r.json())
+  .then(d => {
+    current.innerText = d.current;
+    next.innerText = d.next;
 
-    queueTable.innerHTML = "";
-    d.list.forEach(q=>{
-      queueTable.innerHTML += `
-        <tr>
-          <td>${q.queue}</td>
-          <td>${q.name}</td>
-          <td>${q.status}</td>
-        </tr>`;
+    list.innerHTML = "";
+    d.list.forEach(q => {
+      list.innerHTML += `
+        <div class="row">
+          <div>#${q.queue} ${q.name}</div>
+          <span class="status ${q.status === "กำลังเรียก" ? "call" : "wait"}">
+            ${q.status}
+          </span>
+        </div>
+      `;
     });
   });
 }
 
-/* ================= ACTIONS ================= */
-function nextQueue(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"nextQueue"})
-  }).then(()=>loadQueue());
+/* -------- NEXT -------- */
+function nextQueue() {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "nextQueue" })
+  }).then(loadQueue);
 }
 
-function skipQueue(){
-  fetch(GAS_URL,{
-    method:"POST",
-    body:JSON.stringify({action:"skipQueue"})
-  }).then(()=>loadQueue());
+/* -------- SKIP -------- */
+function skipQueue() {
+  fetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "skipQueue" })
+  }).then(loadQueue);
 }
 </script>
 
