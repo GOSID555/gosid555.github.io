@@ -1,26 +1,105 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <title>จองคิว</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- LIFF -->
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #e5e7eb;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  padding: 24px;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.15);
+  text-align: center;
+}
+
+h1 {
+  margin-top: 0;
+  color: #111827;
+}
+
+.user {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+button {
+  width: 100%;
+  padding: 18px;
+  border-radius: 14px;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-main {
+  background: #374151;
+  color: #ffffff;
+}
+
+button:disabled {
+  background: #9ca3af;
+}
+
+.result {
+  margin-top: 20px;
+  background: #f3f4f6;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  color: #111827;
+  white-space: pre-line;
+}
+
+.footer {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+</style>
 </head>
 
 <body>
-<h2 id="status">กำลังโหลด...</h2>
-<button onclick="reserve()">จองคิว</button>
 
+<div class="card">
+  <h1>📋 จองคิว</h1>
+  <div class="user" id="welcome">กำลังโหลด...</div>
+
+  <button id="btn" class="btn-main" onclick="reserve()">จองคิว</button>
+
+  <div class="result" id="result" style="display:none"></div>
+
+  <div class="footer">กรุณารอเรียกคิวจากเจ้าหน้าที่</div>
+</div>
 
 <script>
-const LIFF_ID = "2008930440-jI56TpIn";
-const API_URL = "https://script.google.com/macros/s/AKfycbySzAzTfbVQcBIbLPSJln2Ya_F464IFRYb7j0CqEHMqtbPF1p0Ii9hoOlVAQKs9-FY/exec";
+/* 🔴 แก้ 2 จุดนี้ */
+const LIFF_ID = "2008930440-jI56TpInD";
+const API_URL = "https://script.google.com/macros/s/XXXX/exec";
 
-let profile;
+let profile = null;
 
-async function main() {
+/* ---------- INIT LIFF ---------- */
+window.onload = async () => {
   try {
-    document.getElementById("status").innerText = "เริ่ม LIFF";
     await liff.init({ liffId: LIFF_ID });
 
     if (!liff.isLoggedIn()) {
@@ -29,41 +108,52 @@ async function main() {
     }
 
     profile = await liff.getProfile();
-    document.getElementById("status").innerText =
-      "สวัสดี " + profile.displayName;
+    welcome.innerText = "สวัสดีคุณ " + profile.displayName;
 
   } catch (e) {
-    document.getElementById("status").innerText =
-      "ERROR: " + e.message;
+    welcome.innerText = "ไม่สามารถโหลด LINE ได้";
   }
-}
+};
 
-async function reserve() {
-  alert("เริ่มจองคิว");
+/* ---------- RESERVE ---------- */
+function reserve() {
+  btn.disabled = true;
+  btn.innerText = "กำลังจองคิว...";
 
-  try {
-  const res = await fetch(API_URL, {
-  method: "POST",
-  body: JSON.stringify({
-    userId: profile.userId,
-    name: profile.displayName
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      userId: profile.userId,
+      name: profile.displayName
+    })
   })
-});
+  .then(r => r.json())
+  .then(d => {
+    result.style.display = "block";
 
-
-    alert("ยิง GAS แล้ว");
-
-    const text = await res.text();
-    alert("GAS ตอบกลับ: " + text);
-
-  } catch (err) {
-    alert("FETCH ERROR: " + err.message);
-    console.error(err);
-  }
+    if (d.status === "exists") {
+      result.innerText =
+        `✅ คุณจองคิวไว้แล้ว\n\nคิวของคุณคือ #${d.queue}`;
+    }
+    else if (d.status === "ok") {
+      result.innerText =
+        `🎉 จองคิวสำเร็จ\n\nคิวของคุณคือ #${d.queue}`;
+    }
+    else {
+      result.innerText = "❌ ไม่สามารถจองคิวได้";
+    }
+  })
+  .catch(() => {
+    result.style.display = "block";
+    result.innerText = "❌ ระบบขัดข้อง";
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.innerText = "จองคิว";
+  });
 }
-
-
-main();
 </script>
+
 </body>
 </html>
+
