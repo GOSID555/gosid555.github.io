@@ -2,14 +2,14 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>Admin Queue Dashboard</title>
+<title>Queue Admin Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #00c853, #64dd17);
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#00c853,#64dd17);
   min-height: 100vh;
 }
 
@@ -23,7 +23,7 @@ body {
   background: #fff;
   border-radius: 16px;
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  box-shadow: 0 10px 25px rgba(0,0,0,.2);
 }
 
 h1,h2 {
@@ -35,53 +35,50 @@ input {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
+  font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ccc;
-  font-size: 16px;
 }
 
 button {
   width: 100%;
   padding: 14px;
-  margin-top: 15px;
+  margin-top: 12px;
+  font-size: 16px;
   border: none;
   border-radius: 10px;
-  font-size: 16px;
-  cursor: pointer;
   font-weight: bold;
+  cursor: pointer;
 }
 
-.btn-main {
-  background: #00c853;
-  color: #fff;
-}
-
-.btn-skip {
-  background: #ff7043;
-  color: #fff;
-}
+.btn-main { background:#00c853; color:#fff; }
+.btn-skip { background:#ff7043; color:#fff; }
 
 .queue-box {
   display: flex;
-  justify-content: space-between;
-  margin: 20px 0;
+  gap: 8px;
+  margin: 15px 0;
 }
 
 .queue-item {
   flex: 1;
   background: #f5f5f5;
-  margin: 0 5px;
   border-radius: 12px;
-  padding: 15px;
+  padding: 12px;
   text-align: center;
 }
 
+.queue-item small {
+  color: #666;
+}
+
 .queue-item h3 {
-  margin: 5px 0;
+  margin: 5px 0 0;
+  font-size: 22px;
 }
 
 .list {
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
   margin-top: 10px;
 }
@@ -89,19 +86,20 @@ button {
 .row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 8px;
   border-bottom: 1px solid #eee;
   font-size: 14px;
 }
 
 .status {
-  font-size: 12px;
   padding: 2px 8px;
   border-radius: 6px;
+  font-size: 12px;
 }
 
-.wait { background: #fff9c4; }
-.call { background: #c8e6c9; }
+.wait { background:#fff9c4; }
+.call { background:#c8e6c9; }
 </style>
 </head>
 
@@ -121,23 +119,22 @@ button {
 <div class="card" id="dashBox" style="display:none">
   <h2>📋 Queue Dashboard</h2>
 
- <div class="queue-box">
-  <div class="queue-item">
-    <small>กำลังเรียก</small>
-    <h3 id="current">-</h3>
-  </div>
+  <div class="queue-box">
+    <div class="queue-item">
+      <small>กำลังเรียก</small>
+      <h3 id="current">-</h3>
+    </div>
 
-  <div class="queue-item">
-    <small>คิวถัดไป</small>
-    <h3 id="next">-</h3>
-  </div>
+    <div class="queue-item">
+      <small>คิวถัดไป</small>
+      <h3 id="next">-</h3>
+    </div>
 
-  <div class="queue-item">
-    <small>คิวทั้งหมด</small>
-    <h3 id="total">0</h3>
+    <div class="queue-item">
+      <small>คิวทั้งหมด</small>
+      <h3 id="total">0</h3>
+    </div>
   </div>
-</div>
-
 
   <button class="btn-main" onclick="nextQueue()">▶ เรียกคิวถัดไป</button>
   <button class="btn-skip" onclick="skipQueue()">⏭ ข้ามคิว</button>
@@ -148,7 +145,8 @@ button {
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzZfnZqLHIUjU4en3zk-LfuxQruWI0PzfpBMdPN9elPWDtc-qtB4RmTDsPEOtTqAwhp/exec";
+/* 🔴 ใส่ GAS URL ของคุณ */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzgtj8N07UJL5T317bRh-ExD3sf0V7WlOpsWJSj6CSb293I9YqJolAA81lpxzF8Ltnd/exec";
 
 /* -------- LOGIN -------- */
 function login() {
@@ -183,7 +181,7 @@ function loadQueue() {
   .then(d => {
     current.innerText = d.current ?? "-";
     next.innerText = d.next ?? "-";
-    total.innerText = d.total ?? 0;   // ✅ บรรทัดนี้แหละ
+    total.innerText = d.total ?? 0;
 
     list.innerHTML = "";
     d.list.forEach(q => {
@@ -199,9 +197,7 @@ function loadQueue() {
   });
 }
 
-}
-
-/* -------- NEXT -------- */
+/* -------- NEXT QUEUE -------- */
 function nextQueue() {
   fetch(GAS_URL, {
     method: "POST",
@@ -209,7 +205,7 @@ function nextQueue() {
   }).then(loadQueue);
 }
 
-/* -------- SKIP -------- */
+/* -------- SKIP QUEUE -------- */
 function skipQueue() {
   fetch(GAS_URL, {
     method: "POST",
