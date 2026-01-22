@@ -1,167 +1,156 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<title>จองคิว</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จองคิว</title>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 <style>
 body {
-  margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background: #e5e7eb;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-family: system-ui, sans-serif;
+  background:#e5e7eb;
+  margin:0;
+  padding:20px;
 }
-
 .card {
-  background: #ffffff;
-  width: 100%;
-  max-width: 380px;
-  padding: 24px;
-  border-radius: 18px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.15);
-  text-align: center;
+  background:white;
+  max-width:420px;
+  margin:auto;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
 }
-
-h1 {
-  margin-top: 0;
-  color: #111827;
+h2 { margin-top:0 }
+.info {
+  background:#f3f4f6;
+  border-radius:12px;
+  padding:16px;
+  margin:12px 0;
 }
-
-.user {
-  color: #6b7280;
-  margin-bottom: 20px;
-}
-
 button {
-  width: 100%;
-  padding: 18px;
-  border-radius: 14px;
-  border: none;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
+  width:100%;
+  padding:16px;
+  border-radius:14px;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
 }
-
-button:disabled {
-  background: #9ca3af;
-}
-
-.btn-main {
-  background: #374151;
-  color: #ffffff;
-}
-
-.result {
-  margin-top: 20px;
-  background: #f3f4f6;
-  padding: 16px;
-  border-radius: 12px;
-  font-size: 16px;
-  white-space: pre-line;
-}
-
-.footer {
-  margin-top: 15px;
-  font-size: 13px;
-  color: #9ca3af;
-}
+.primary { background:#111827; color:white }
+.danger { background:#ef4444; color:white }
+.gray { background:#9ca3af; color:white }
+.hidden { display:none }
 </style>
 </head>
 
 <body>
 
 <div class="card">
-  <h1>ระบบ จองคิว</h1>
+  <h2 id="title">กำลังโหลด...</h2>
 
-  <div class="user" id="welcome">กำลังโหลดข้อมูล...</div>
+  <div id="queueInfo" class="info hidden"></div>
 
-  <button id="btnReserve" class="btn-main" disabled onclick="reserve()">
-    กำลังเตรียมระบบ...
+  <button id="bookBtn" class="primary hidden" onclick="bookQueue()">
+    จองคิว
   </button>
 
-  <div class="result" id="result" style="display:none"></div>
-
-  <div class="footer">กรุณารอเรียกคิวจากเจ้าหน้าที่</div>
+  <button id="cancelBtn" class="danger hidden" onclick="cancelQueue()">
+    ยกเลิกคิว
+  </button>
 </div>
 
 <script>
-const LIFF_ID = "2008930440-jI56TpIn";   // ใช้ตัวนี้
-const API_URL = "https://script.google.com/macros/s/AKfycbyc-vGhYqabcuatCaDsi9rBCZ9Qj-Z2FknzKVUkQfEmXXmFdFA-7UAlcc8oniTOlCtF/exec";
+const LIFF_ID = "2008930440-jI56TpIn"
+const API_URL = "https://script.google.com/macros/s/AKfycbzLpYZsCxr1Hd9Knsp_fBFLQ6PhqQFl4YjnDOPhE3HugxFVgVzSY6IlaEYT7NzhzCIn/exec"
 
-let profile = null;
+let profile = null
 
-/* ---------- INIT LIFF (สำคัญมาก) ---------- */
-window.onload = async () => {
+/* ===== INIT ===== */
+async function init() {
   try {
-    await liff.init({ liffId: LIFF_ID });
-
+    await liff.init({ liffId: LIFF_ID })
     if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
+      liff.login()
+      return
     }
 
-    profile = await liff.getProfile();
+    profile = await liff.getProfile()
+    checkQueue()
 
-    welcome.innerText = "สวัสดีคุณ " + profile.displayName;
-    btnReserve.disabled = false;
-    btnReserve.innerText = "จองคิว";
-
-  } catch (err) {
-    welcome.innerText = "❌ ไม่สามารถโหลด LINE ได้";
-    console.error(err);
+  } catch {
+    document.getElementById("title").innerText =
+      "กรุณาเปิดผ่าน LINE"
   }
-};
+}
 
-/* ---------- RESERVE QUEUE ---------- */
-function reserve() {
-  if (!profile) {
-    alert("ยังไม่พร้อมใช้งาน");
-    return;
-  }
+/* ===== CHECK QUEUE ===== */
+function checkQueue() {
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"checkQueue",
+      userId: profile.userId
+    })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if (d.status === "exists") {
+      showQueue(d)
+    } else {
+      showBooking()
+    }
+  })
+}
 
-  btnReserve.disabled = true;
-  btnReserve.innerText = "กำลังจองคิว...";
+/* ===== UI STATES ===== */
+function showBooking(){
+  title.innerText = "ยังไม่มีคิว"
+  bookBtn.classList.remove("hidden")
+}
 
-  fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
+function showQueue(d){
+  title.innerText = "คุณมีคิวแล้ว"
+  queueInfo.classList.remove("hidden")
+  cancelBtn.classList.remove("hidden")
+
+  queueInfo.innerHTML = `
+    🎫 คิวของคุณ: <b>#${d.queue}</b><br>
+    ▶ คิวปัจจุบัน: ${d.current}<br>
+    ⏳ เหลืออีก: ${d.remain} คิว
+  `
+}
+
+/* ===== ACTIONS ===== */
+function bookQueue(){
+  bookBtn.disabled = true
+
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"reserve",
       userId: profile.userId,
       name: profile.displayName
     })
   })
-  .then(r => r.json())
-  .then(d => {
-    result.style.display = "block";
-
-    if (d.status === "exists") {
-      result.innerText =
-        `คุณมีคิวอยู่แล้ว\n\nคิวของคุณคือ #${d.queue}`;
-    }
-    else if (d.status === "ok") {
-      result.innerText =
-        `🎉 จองคิวสำเร็จ\n\nคิวของคุณคือ #${d.queue}`;
-    }
-    else {
-      result.innerText = "❌ ไม่สามารถจองคิวได้";
-    }
-  })
-  .catch(err => {
-    result.style.display = "block";
-    result.innerText = "❌ ระบบขัดข้อง";
-    console.error(err);
-  })
-  .finally(() => {
-    btnReserve.disabled = false;
-    btnReserve.innerText = "จองคิว";
-  });
+  .then(r=>r.json())
+  .then(checkQueue)
 }
+
+function cancelQueue(){
+  if(!confirm("ยืนยันยกเลิกคิว?")) return
+
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"cancelQueue",
+      userId: profile.userId
+    })
+  })
+  .then(()=>location.reload())
+}
+
+init()
 </script>
 
 </body>
