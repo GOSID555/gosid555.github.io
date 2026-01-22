@@ -111,7 +111,7 @@ window.onload = async () => {
     welcome.innerText = "สวัสดีคุณ " + profile.displayName;
 
   } catch (e) {
-    welcome.innerText = "ไม่สามารถโหลด LINE ได้";
+    welcome.innerText = "ไม่สามารถโหลด LINE ได้\n"+e.message;
   }
 };
 
