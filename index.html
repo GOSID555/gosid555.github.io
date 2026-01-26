@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>จองคิวผ่าน LINE</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จองคิวผ่าน LINE</title>
 
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    body { background:#f3f4f6; font-family: system-ui; }
-    .hidden { display:none }
-  </style>
+<style>
+body { background:#f3f4f6; font-family: system-ui }
+.hidden { display:none }
+</style>
 </head>
 
 <body class="min-h-screen flex items-center justify-center">
@@ -20,7 +20,8 @@
 
   <!-- loading -->
   <div id="loading">
-    <p class="text-center">⏳ กำลังเชื่อมต่หหหอ LINE...</p>
+    <p class="text-center">⏳ กำลังเชื่อมต่อ LINE...</p>
+    <p id="error" class="text-red-500 text-sm mt-3 hidden"></p>
   </div>
 
   <!-- form -->
@@ -30,24 +31,15 @@
       LINE: <span id="lineName"></span>
     </p>
 
-    <form id="queueForm">
+    <form onsubmit="submitForm(event)">
       <input type="hidden" id="userId">
 
-      <input id="name" required
-        class="w-full border p-2 mb-2 rounded"
-        placeholder="ชื่อ">
+      <input id="name" required class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
+      <input id="phone" required class="w-full border p-2 mb-2 rounded" placeholder="เบอร์">
 
-      <input id="phone" required
-        class="w-full border p-2 mb-2 rounded"
-        placeholder="เบอร์โทร">
+      <input type="file" id="image" accept="image/*" class="mb-4">
 
-      <input type="file" id="image"
-        accept="image/*"
-        class="mb-4">
-
-      <button
-        type="submit"
-        class="w-full bg-blue-600 text-white p-2 rounded">
+      <button class="w-full bg-blue-600 text-white p-2 rounded">
         ยืนยันจอง
       </button>
     </form>
@@ -55,11 +47,9 @@
 
   <!-- status -->
   <div id="statusBox" class="hidden text-center">
-    <p class="text-gray-500">คิวของคุณ</p>
-    <p id="qNumber" class="text-5xl font-bold text-blue-600 my-2"></p>
-    <p class="text-sm text-gray-600">
-      รออีก <span id="wait"></span> คิว
-    </p>
+    <p>คิวของคุณ</p>
+    <p id="qNumber" class="text-5xl font-bold text-blue-600"></p>
+    <p>รออีก <span id="wait"></span> คิว</p>
   </div>
 
 </div>
@@ -69,49 +59,50 @@ const LIFF_ID = "2008930440-jI56TpIn";
 const API_URL = "https://script.google.com/macros/s/AKfycbwB5mJjhCNfrNguupvbxMFlIjWlsOxNnghsVM1g_0V4hhc5NuFHBve3iAPLYDUjV8k1lw/exec";
 
 async function init() {
-  await liff.init({ liffId: LIFF_ID });
+  try {
+    if (!window.liff) throw new Error("LIFF SDK ไม่โหลด");
 
-  if (!liff.isLoggedIn()) {
-    liff.login();
-    return;
+    await liff.init({ liffId: LIFF_ID });
+
+    if (!liff.isInClient()) {
+      throw new Error("ต้องเปิดผ่านแอป LINE เท่านั้น");
+    }
+
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+
+    const profile = await liff.getProfile();
+
+    document.getElementById("userId").value = profile.userId;
+    document.getElementById("lineName").innerText = profile.displayName;
+
+    checkQueue(profile.userId);
+
+  } catch (err) {
+    document.getElementById("error").innerText = err.message;
+    document.getElementById("error").classList.remove("hidden");
+    console.error(err);
   }
-
-  const profile = await liff.getProfile();
-  lineName.innerText = profile.displayName;
-  userId.value = profile.userId;
-
-  await checkQueue(profile.userId);
 }
 
 async function checkQueue(userId) {
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "checkQueue",
-      userId
-    })
-  });
-
+  const res = await fetch(`${API_URL}?action=checkQueue&userId=${userId}`);
   const data = await res.json();
 
-  loading.classList.add("hidden");
+  document.getElementById("loading").classList.add("hidden");
 
   if (data.status === "found") {
-    showQueue(data.qNumber, data.waitCount || 0);
+    document.getElementById("statusBox").classList.remove("hidden");
+    document.getElementById("qNumber").innerText = data.qNumber;
+    document.getElementById("wait").innerText = data.waitCount;
   } else {
-    formBox.classList.remove("hidden");
+    document.getElementById("formBox").classList.remove("hidden");
   }
 }
 
-function showQueue(qNumber, waitCount) {
-  formBox.classList.add("hidden");
-  statusBox.classList.remove("hidden");
-  qNumberEl.innerText = qNumber;
-  wait.innerText = waitCount;
-}
-
-queueForm.addEventListener("submit", async (e) => {
+async function submitForm(e) {
   e.preventDefault();
 
   const payload = {
@@ -125,22 +116,19 @@ queueForm.addEventListener("submit", async (e) => {
     payload.image = await toBase64(image.files[0]);
   }
 
-  const res = await fetch(API_URL, {
+  await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
 
-  const result = await res.json();
-
-  showQueue(result.qNumber, result.waitCount || 0);
-});
+  location.reload();
+}
 
 function toBase64(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.readAsDataURL(file);
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.readAsDataURL(file);
   });
 }
 
