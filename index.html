@@ -31,18 +31,20 @@ body { background:#f3f4f6; font-family: system-ui }
       LINE: <span id="lineName"></span>
     </p>
 
-    <form onsubmit="submitForm(event)">
-      <input type="hidden" id="userId">
+    <!-- ❌ ไม่ใช้ submit -->
+    <input type="hidden" id="userId">
 
-      <input id="name" required class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
-      <input id="phone" required class="w-full border p-2 mb-2 rounded" placeholder="เบอร์">
+    <input id="name" class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
+    <input id="phone" class="w-full border p-2 mb-2 rounded" placeholder="เบอร์">
 
-      <input type="file" id="image" accept="image/*" class="mb-4">
+    <input type="file" id="image" accept="image/*" class="mb-4">
 
-      <button class="w-full bg-blue-600 text-white p-2 rounded">
-        ยืนยันจอง
-      </button>
-    </form>
+    <button
+      type="button"
+      onclick="submitForm()"
+      class="w-full bg-blue-600 text-white p-2 rounded">
+      ยืนยันจอง
+    </button>
   </div>
 
   <!-- status -->
@@ -60,13 +62,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxb04n9Wj9epLGwzGeUSPEs
 
 async function init() {
   try {
-    if (!window.liff) throw new Error("LIFF SDK ไม่โหลด");
-
     await liff.init({ liffId: LIFF_ID });
-
-    if (!liff.isInClient()) {
-      throw new Error("ต้องเปิดผ่านแอป LINE เท่านั้น");
-    }
 
     if (!liff.isLoggedIn()) {
       liff.login();
@@ -74,16 +70,13 @@ async function init() {
     }
 
     const profile = await liff.getProfile();
-
     document.getElementById("userId").value = profile.userId;
     document.getElementById("lineName").innerText = profile.displayName;
 
     checkQueue(profile.userId);
 
   } catch (err) {
-    document.getElementById("error").innerText = err.message;
-    document.getElementById("error").classList.remove("hidden");
-    console.error(err);
+    showError(err.message);
   }
 }
 
@@ -96,32 +89,49 @@ async function checkQueue(userId) {
   if (data.status === "found") {
     document.getElementById("statusBox").classList.remove("hidden");
     document.getElementById("qNumber").innerText = data.qNumber;
-    document.getElementById("wait").innerText = data.waitCount;
+    document.getElementById("wait").innerText = data.waitCount ?? "-";
   } else {
     document.getElementById("formBox").classList.remove("hidden");
   }
 }
 
-async function submitForm(e) {
-  e.preventDefault();
+async function submitForm() {
+  try {
+    const userId = document.getElementById("userId").value;
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const imageInput = document.getElementById("image");
 
-  const payload = {
-    action: "submitQueue",
-    userId: userId.value,
-    name: name.value,
-    phone: phone.value
-  };
+    if (!name || !phone) {
+      alert("กรุณากรอกข้อมูลให้ครบ");
+      return;
+    }
 
-  if (image.files.length > 0) {
-    payload.image = await toBase64(image.files[0]);
+    const payload = {
+      action: "submitQueue",
+      userId,
+      name,
+      phone
+    };
+
+    if (imageInput.files.length > 0) {
+      payload.image = await toBase64(imageInput.files[0]);
+    }
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    alert("จองสำเร็จ! คิวของคุณคือ " + data.qNumber);
+    location.reload();
+
+  } catch (err) {
+    alert("เกิดข้อผิดพลาด: " + err.message);
   }
-
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-
-  location.reload();
 }
 
 function toBase64(file) {
@@ -130,6 +140,12 @@ function toBase64(file) {
     r.onload = () => res(r.result);
     r.readAsDataURL(file);
   });
+}
+
+function showError(msg) {
+  const el = document.getElementById("error");
+  el.innerText = msg;
+  el.classList.remove("hidden");
 }
 
 init();
