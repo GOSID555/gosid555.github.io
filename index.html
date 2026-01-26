@@ -1,85 +1,118 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LIFF Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จองคิวผ่าน LINE</title>
 
-  <!-- LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #f3f4f6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    .card {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 360px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,.1);
-    }
-    .error {
-      color: red;
-      margin-top: 12px;
-      font-size: 14px;
-    }
+    body { background:#f3f4f6; font-family: system-ui; }
+    .hidden { display:none }
   </style>
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center">
 
-<div class="card">
-  <h2>🔍 LIFF Test</h2>
-  <p id="status">กำลังเชื่อมต่อ LINE...</p>
+<div class="bg-white p-6 rounded-xl shadow w-full max-w-md">
 
-  <div id="profile" style="display:none">
-    <img id="picture" width="80" style="border-radius:50%" />
-    <p><b id="name"></b></p>
-    <p style="font-size:12px;color:#666" id="userId"></p>
+  <!-- loading -->
+  <div id="loading">
+    <p class="text-center">⏳ กำลังเชื่อมต่อ LINE...</p>
   </div>
 
-  <div id="error" class="error"></div>
+  <!-- form -->
+  <div id="formBox" class="hidden">
+    <h2 class="text-xl font-bold mb-2">จองคิว</h2>
+    <p class="text-sm text-green-600 mb-4">LINE: <span id="lineName"></span></p>
+
+    <form onsubmit="submitForm(event)">
+      <input type="hidden" id="userId">
+
+      <input required id="name" class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
+      <input required id="phone" class="w-full border p-2 mb-2 rounded" placeholder="เบอร์">
+
+      <input type="file" id="image" accept="image/*" class="mb-4">
+
+      <button class="w-full bg-blue-600 text-white p-2 rounded">ยืนยันจอง</button>
+    </form>
+  </div>
+
+  <!-- status -->
+  <div id="statusBox" class="hidden text-center">
+    <p>คิวของคุณ</p>
+    <p id="qNumber" class="text-5xl font-bold text-blue-600"></p>
+    <p>รออีก <span id="wait"></span> คิว</p>
+  </div>
+
 </div>
 
 <script>
-  const LIFF_ID = "2008930440-jI56TpIn"; // 🔴 ใส่ LIFF ID ของคุณ
+const LIFF_ID = "2008930440-jI56TpIn";
+const API_URL = "https://script.google.com/macros/s/AKfycby3MI9KOh8bRdJluRWj0wms5jxHuYXyi_oW_x21DUZqvXQJW2MYp8Aku0d5GrKkcmt3RA/exec";
 
-  async function initLIFF() {
-    try {
-      await liff.init({ liffId: LIFF_ID });
+async function init() {
+  await liff.init({ liffId: LIFF_ID });
 
-      if (!liff.isLoggedIn()) {
-        liff.login();
-        return;
-      }
-
-      const profile = await liff.getProfile();
-
-      document.getElementById("status").innerText = "✅ เชื่อมต่อสำเร็จ";
-      document.getElementById("profile").style.display = "block";
-
-      document.getElementById("name").innerText = profile.displayName;
-      document.getElementById("userId").innerText = profile.userId;
-      document.getElementById("picture").src = profile.pictureUrl;
-
-      console.log("LIFF OK:", profile);
-
-    } catch (err) {
-      document.getElementById("status").innerText = "❌ เชื่อมต่อไม่สำเร็จ";
-      document.getElementById("error").innerText = err.message;
-      console.error(err);
-    }
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
   }
 
-  initLIFF();
-</script>
+  const profile = await liff.getProfile();
+  document.getElementById("lineName").innerText = profile.displayName;
+  document.getElementById("userId").value = profile.userId;
 
+  checkQueue(profile.userId);
+}
+
+async function checkQueue(userId) {
+  const res = await fetch(`${API_URL}?action=checkQueue&userId=${userId}`);
+  const data = await res.json();
+
+  document.getElementById("loading").classList.add("hidden");
+
+  if (data.hasQueue) {
+    document.getElementById("statusBox").classList.remove("hidden");
+    document.getElementById("qNumber").innerText = data.qNumber;
+    document.getElementById("wait").innerText = data.waitCount;
+  } else {
+    document.getElementById("formBox").classList.remove("hidden");
+  }
+}
+
+async function submitForm(e) {
+  e.preventDefault();
+
+  const payload = {
+    action: "submitQueue",
+    userId: userId.value,
+    name: name.value,
+    phone: phone.value
+  };
+
+  if (image.files.length > 0) {
+    payload.image = await toBase64(image.files[0]);
+  }
+
+  await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  location.reload();
+}
+
+function toBase64(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.readAsDataURL(file);
+  });
+}
+
+init();
+</script>
 </body>
 </html>
