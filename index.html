@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>จองคิวผ่าน LINE</title>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -13,6 +13,7 @@
     .hidden { display:none }
   </style>
 </head>
+
 <body class="min-h-screen flex items-center justify-center">
 
 <div class="bg-white p-6 rounded-xl shadow w-full max-w-md">
@@ -25,25 +26,40 @@
   <!-- form -->
   <div id="formBox" class="hidden">
     <h2 class="text-xl font-bold mb-2">จองคิว</h2>
-    <p class="text-sm text-green-600 mb-4">LINE: <span id="lineName"></span></p>
+    <p class="text-sm text-green-600 mb-4">
+      LINE: <span id="lineName"></span>
+    </p>
 
-    <form onsubmit="submitForm(event)">
+    <form id="queueForm">
       <input type="hidden" id="userId">
 
-      <input required id="name" class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
-      <input required id="phone" class="w-full border p-2 mb-2 rounded" placeholder="เบอร์">
+      <input id="name" required
+        class="w-full border p-2 mb-2 rounded"
+        placeholder="ชื่อ">
 
-      <input type="file" id="image" accept="image/*" class="mb-4">
+      <input id="phone" required
+        class="w-full border p-2 mb-2 rounded"
+        placeholder="เบอร์โทร">
 
-      <button class="w-full bg-blue-600 text-white p-2 rounded">ยืนยันจอง</button>
+      <input type="file" id="image"
+        accept="image/*"
+        class="mb-4">
+
+      <button
+        type="submit"
+        class="w-full bg-blue-600 text-white p-2 rounded">
+        ยืนยันจอง
+      </button>
     </form>
   </div>
 
   <!-- status -->
   <div id="statusBox" class="hidden text-center">
-    <p>คิวของคุณ</p>
-    <p id="qNumber" class="text-5xl font-bold text-blue-600"></p>
-    <p>รออีก <span id="wait"></span> คิว</p>
+    <p class="text-gray-500">คิวของคุณ</p>
+    <p id="qNumber" class="text-5xl font-bold text-blue-600 my-2"></p>
+    <p class="text-sm text-gray-600">
+      รออีก <span id="wait"></span> คิว
+    </p>
   </div>
 
 </div>
@@ -61,28 +77,41 @@ async function init() {
   }
 
   const profile = await liff.getProfile();
-  document.getElementById("lineName").innerText = profile.displayName;
-  document.getElementById("userId").value = profile.userId;
+  lineName.innerText = profile.displayName;
+  userId.value = profile.userId;
 
-  checkQueue(profile.userId);
+  await checkQueue(profile.userId);
 }
 
 async function checkQueue(userId) {
-  const res = await fetch(`${API_URL}?action=checkQueue&userId=${userId}`);
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "checkQueue",
+      userId
+    })
+  });
+
   const data = await res.json();
 
-  document.getElementById("loading").classList.add("hidden");
+  loading.classList.add("hidden");
 
-  if (data.hasQueue) {
-    document.getElementById("statusBox").classList.remove("hidden");
-    document.getElementById("qNumber").innerText = data.qNumber;
-    document.getElementById("wait").innerText = data.waitCount;
+  if (data.status === "found") {
+    showQueue(data.qNumber, data.waitCount || 0);
   } else {
-    document.getElementById("formBox").classList.remove("hidden");
+    formBox.classList.remove("hidden");
   }
 }
 
-async function submitForm(e) {
+function showQueue(qNumber, waitCount) {
+  formBox.classList.add("hidden");
+  statusBox.classList.remove("hidden");
+  qNumberEl.innerText = qNumber;
+  wait.innerText = waitCount;
+}
+
+queueForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const payload = {
@@ -96,23 +125,27 @@ async function submitForm(e) {
     payload.image = await toBase64(image.files[0]);
   }
 
-  await fetch(API_URL, {
+  const res = await fetch(API_URL, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
 
-  location.reload();
-}
+  const result = await res.json();
+
+  showQueue(result.qNumber, result.waitCount || 0);
+});
 
 function toBase64(file) {
-  return new Promise(res => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.readAsDataURL(file);
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
   });
 }
 
 init();
 </script>
+
 </body>
 </html>
