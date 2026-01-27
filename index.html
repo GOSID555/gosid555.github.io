@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,7 +26,7 @@
             background: white;
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
 
         h1 {
@@ -168,8 +169,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .message {
@@ -206,6 +212,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>📋 ระบบจองคิว</h1>
@@ -231,7 +238,7 @@
                     <div class="file-name" id="fileName"></div>
                 </div>
                 <input type="file" id="imageInput" accept="image/*" required>
-                
+
                 <div class="preview-container">
                     <button type="button" class="remove-image" id="removeImage">✕</button>
                     <img id="imagePreview" alt="Preview">
@@ -259,7 +266,7 @@
         let selectedFile = null;
 
         // เริ่มต้น LIFF
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initializeLiff();
             setupEventListeners();
         });
@@ -267,7 +274,7 @@
         async function initializeLiff() {
             try {
                 await liff.init({ liffId: liffId });
-                
+
                 if (!liff.isLoggedIn()) {
                     liff.login();
                 } else {
@@ -307,7 +314,7 @@
             imageUploadArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 imageUploadArea.classList.remove('dragover');
-                
+
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                     imageInput.files = files;
@@ -325,14 +332,14 @@
             form.addEventListener('submit', handleSubmit);
 
             // ตรวจสอบเบอร์โทร
-            document.getElementById('phone').addEventListener('input', function(e) {
+            document.getElementById('phone').addEventListener('input', function (e) {
                 this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
             });
         }
 
         function handleFileSelect(e) {
             const file = e.target.files[0];
-            
+
             if (!file) return;
 
             // ตรวจสอบขนาดไฟล์
@@ -356,7 +363,7 @@
 
             // แสดง preview
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const imagePreview = document.getElementById('imagePreview');
                 imagePreview.src = e.target.result;
                 imagePreview.style.display = 'block';
@@ -408,60 +415,69 @@
                     mimeType: selectedFile.type
                 };
 
-                const response = await fetch(scriptUrl, {
+               const response = await fetch(scriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(formData)
                 });
 
-                // เนื่องจากใช้ no-cors จะไม่สามารถอ่าน response ได้
-                // ดังนั้นเราจะถือว่าสำเร็จ และแจ้งเตือนผู้ใช้
-                showSuccess();
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
 
-            } catch (error) {
-                console.error('Error:', error);
-                showMessage('เกิดข้อผิดพลาดในการจองคิว กรุณาลองใหม่อีกครั้ง', 'error');
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('submitBtn').disabled = false;
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showSuccess();
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage('เกิดข้อผิดพลาดในการจองคิว กรุณาลองใหม่อีกครั้ง', 'error');
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('submitBtn').disabled = false;
+                }
             }
-        }
 
         function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
 
-        function showSuccess() {
-            document.getElementById('queueForm').style.display = 'none';
-            showMessage('✅ จองคิวสำเร็จ! คุณจะได้รับการแจ้งเตือนผ่าน LINE เมื่อถึงคิวของคุณ', 'success');
-            
-            // รีเซ็ตฟอร์มหลัง 3 วินาที
-            setTimeout(() => {
-                document.getElementById('queueForm').style.display = 'block';
-                document.getElementById('queueForm').reset();
-                clearImage();
-                hideMessage();
-            }, 3000);
-        }
+            function showSuccess() {
+                document.getElementById('queueForm').style.display = 'none';
+                showMessage('✅ จองคิวสำเร็จ! คุณจะได้รับการแจ้งเตือนผ่าน LINE เมื่อถึงคิวของคุณ', 'success');
 
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = text;
-            messageEl.className = 'message ' + type;
-            messageEl.style.display = 'block';
-        }
+                // รีเซ็ตฟอร์มหลัง 3 วินาที
+                setTimeout(() => {
+                    document.getElementById('queueForm').style.display = 'block';
+                    document.getElementById('queueForm').reset();
+                    clearImage();
+                    hideMessage();
+                }, 3000);
+            }
 
-        function hideMessage() {
-            document.getElementById('message').style.display = 'none';
-        }
+            function showMessage(text, type) {
+                const messageEl = document.getElementById('message');
+                messageEl.textContent = text;
+                messageEl.className = 'message ' + type;
+                messageEl.style.display = 'block';
+            }
+
+            function hideMessage() {
+                document.getElementById('message').style.display = 'none';
+            }
     </script>
 </body>
-</html> 
+
+</html>
