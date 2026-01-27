@@ -497,9 +497,10 @@
     </div>
 
     <script>
-        // ตัวแปรสำหรับเก็บข้อมูล
-        let liffId = '2008930440-jI56TpIn'; // เปลี่ยนเป็น LIFF ID ของคุณ
-        let scriptUrl = 'https://script.google.com/macros/s/AKfycbyYYAvNzntx44_anGDYO5GAaD4cKFMEW7pk5AZo2DDS4a1dxhDxa8sZVRvTRqna0zrCRA/exec'; // เปลี่ยนเป็น URL ของ Google Apps Script
+        // ============ ตัวแปรสำคัญ - ต้องเปลี่ยนค่าเหล่านี้ ============
+        let liffId = '2008930440-jI56TpIn'; // เปลี่ยนเป็น LIFF ID จริง
+        let scriptUrl = 'https://script.google.com/macros/s/AKfycbxAMInxBe-3Rgzog0EAEXfrLDlSmLd-dJBwJeSRXkEXfCfnGYdLXBOqqzOf_jzst7T8Vg/exec'; // เปลี่ยนเป็น Apps Script URL จริง
+        
         let userId = '';
         let selectedFile = null;
         let currentQueue = null;
@@ -540,19 +541,13 @@
         // เช็คว่ามีคิวอยู่แล้วหรือไม่
         async function checkExistingQueue() {
             try {
-                // เรียก API เพื่อเช็คคิวปัจจุบัน
-                const response = await fetch(scriptUrl + '?action=list');
-                const queues = await response.json();
+                // เรียก API เพื่อเช็คคิวปัจจุบัน (ใช้ GET)
+                const response = await fetch(scriptUrl + '?action=checkQueue&userId=' + encodeURIComponent(userId));
+                const result = await response.json();
                 
-                // หาคิวของ user นี้ที่ยังไม่เสร็จ
-                const userQueue = queues.find(q => 
-                    q.UserID === userId && 
-                    (q.Status === 'Waiting' || q.Status === 'Called')
-                );
-                
-                if (userQueue) {
-                    currentQueue = userQueue;
-                    showQueueStatus(userQueue);
+                if (result.found && result.queue) {
+                    currentQueue = result.queue;
+                    showQueueStatus(result.queue);
                 } else {
                     showBookingForm();
                 }
@@ -596,7 +591,6 @@
             if (confirm('คุณต้องการจองคิวใหม่หรือไม่? คิวเดิมจะถูกยกเลิก')) {
                 currentQueue = null;
                 showBookingForm();
-                // อาจจะเรียก API เพื่อยกเลิกคิวเดิม
             }
         }
 
@@ -680,6 +674,7 @@
             selectedFile = null;
         }
 
+        // ============ ส่วนสำคัญ: ใช้ GET แทน POST เพื่อแก้ CORS ============
         async function handleSubmit(e) {
             e.preventDefault();
 
@@ -703,23 +698,18 @@
             try {
                 const base64Image = await fileToBase64(selectedFile);
 
-                const formData = {
+                // ใช้ GET แทน POST เพื่อหลีกเลี่ยง CORS
+                const params = new URLSearchParams({
+                    action: 'book',
                     userId: userId,
-                    name: name,
+                    name: encodeURIComponent(name),
                     phone: phone,
                     image: base64Image,
-                    fileName: selectedFile.name,
+                    fileName: encodeURIComponent(selectedFile.name),
                     mimeType: selectedFile.type
-                };
-
-                const response = await fetch(scriptUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
                 });
 
+                const response = await fetch(scriptUrl + '?' + params.toString());
                 const result = await response.json();
 
                 if (result.success) {
