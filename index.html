@@ -70,8 +70,8 @@ async function init() {
     }
 
     const profile = await liff.getProfile();
-    document.getElementById("userId").value = profile.userId;
-    document.getElementById("lineName").innerText = profile.displayName;
+    userId.value = profile.userId;
+    lineName.innerText = profile.displayName;
 
     checkQueue(profile.userId);
 
@@ -84,38 +84,34 @@ async function checkQueue(userId) {
   const res = await fetch(`${API_URL}?action=checkQueue&userId=${userId}`);
   const data = await res.json();
 
-  document.getElementById("loading").classList.add("hidden");
+  loading.classList.add("hidden");
 
-  if (data.status === "found") {
-    document.getElementById("statusBox").classList.remove("hidden");
-    document.getElementById("qNumber").innerText = data.qNumber;
-    document.getElementById("wait").innerText = data.waitCount ?? "-";
+  if (data.hasQueue) {
+    showStatus(data.qNumber, data.waitCount);
   } else {
-    document.getElementById("formBox").classList.remove("hidden");
+    formBox.classList.remove("hidden");
   }
 }
 
 async function submitForm() {
   try {
-    const userId = document.getElementById("userId").value;
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const imageInput = document.getElementById("image");
+    const nameVal = name.value.trim();
+    const phoneVal = phone.value.trim();
 
-    if (!name || !phone) {
+    if (!nameVal || !phoneVal) {
       alert("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
 
     const payload = {
       action: "submitQueue",
-      userId,
-      name,
-      phone
+      userId: userId.value,
+      name: nameVal,
+      phone: phoneVal
     };
 
-    if (imageInput.files.length > 0) {
-      payload.image = await toBase64(imageInput.files[0]);
+    if (image.files.length > 0) {
+      payload.image = await toBase64(image.files[0]);
     }
 
     const res = await fetch(API_URL, {
@@ -126,12 +122,22 @@ async function submitForm() {
 
     const data = await res.json();
 
-    alert("จองสำเร็จ! คิวของคุณคือ " + data.qNumber);
-    location.reload();
+    if (!data.hasQueue) {
+      throw new Error("จองคิวไม่สำเร็จ");
+    }
+
+    formBox.classList.add("hidden");
+    showStatus(data.qNumber, data.waitCount);
 
   } catch (err) {
     alert("เกิดข้อผิดพลาด: " + err.message);
   }
+}
+
+function showStatus(qNumber, waitCount) {
+  statusBox.classList.remove("hidden");
+  qNumberEl.innerText = qNumber;
+  wait.innerText = waitCount ?? "-";
 }
 
 function toBase64(file) {
@@ -143,13 +149,13 @@ function toBase64(file) {
 }
 
 function showError(msg) {
-  const el = document.getElementById("error");
-  el.innerText = msg;
-  el.classList.remove("hidden");
+  error.innerText = msg;
+  error.classList.remove("hidden");
 }
 
 init();
 </script>
+
 
 </body>
 </html>
