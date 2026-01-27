@@ -1,144 +1,467 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>จองคิวผ่าน LINE</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจองคิว</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
+        body {
+            font-family: 'Prompt', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-<style>
-.hidden { display:none }
-</style>
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="tel"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .image-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .image-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .image-upload.dragover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .preview-container {
+            margin-top: 15px;
+            position: relative;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .queue-number {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .file-name {
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
 </head>
+<body>
+    <div class="container">
+        <h1>📋 ระบบจองคิว</h1>
+        <p class="subtitle">กรุณากรอกข้อมูลเพื่อจองคิว</p>
 
-<body class="min-h-screen flex items-center justify-center bg-gray-100">
+        <form id="queueForm">
+            <div class="form-group">
+                <label for="name">ชื่อ-นามสกุล *</label>
+                <input type="text" id="name" name="name" required placeholder="กรอกชื่อ-นามสกุล">
+            </div>
 
-<div class="bg-white p-6 rounded-xl shadow w-full max-w-md">
+            <div class="form-group">
+                <label for="phone">เบอร์โทรศัพท์ *</label>
+                <input type="tel" id="phone" name="phone" required placeholder="0812345678" pattern="[0-9]{10}">
+            </div>
 
-  <!-- loading -->
-  <div id="loading" class="text-center">
-    ⏳ กำลังเชื่อมต่อ LINE...
-  </div>
+            <div class="form-group">
+                <label>อัพโหลดรูปภาพ *</label>
+                <div class="image-upload" id="imageUploadArea">
+                    <div class="upload-icon">📷</div>
+                    <p>คลิกหรือลากไฟล์มาวางที่นี่</p>
+                    <p style="font-size: 12px; color: #999; margin-top: 5px;">รองรับ: JPG, PNG, GIF (ไม่เกิน 5MB)</p>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" required>
+                
+                <div class="preview-container">
+                    <button type="button" class="remove-image" id="removeImage">✕</button>
+                    <img id="imagePreview" alt="Preview">
+                </div>
+            </div>
 
-  <!-- form -->
-  <div id="formBox" class="hidden">
-    <h2 class="text-xl font-bold mb-2">จองคิว</h2>
-    <p class="text-sm text-green-600 mb-4">
-      LINE: <span id="lineName"></span>
-    </p>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                จองคิว
+            </button>
+        </form>
 
-    <input type="hidden" id="userId">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #667eea;">กำลังดำเนินการ...</p>
+        </div>
 
-    <input id="name" class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
-    <input id="phone" class="w-full border p-2 mb-2 rounded" placeholder="เบอร์โทร">
+        <div class="message" id="message"></div>
+    </div>
 
-    <input type="file" id="image" accept="image/*" class="mb-4">
+    <script>
+        // ตัวแปรสำหรับเก็บข้อมูล
+        let liffId = '2008930440-jI56TpIn'; // เปลี่ยนเป็น LIFF ID ของคุณ
+        let scriptUrl = 'https://script.google.com/macros/s/AKfycbwWtvRDa_qQ_8g2ezzqtaH8W9LCZBbgnsFOeOGvtQN1GRFlIoiP3_NyTGrBXL5hacQD/exec'; // เปลี่ยนเป็น URL ของ Google Apps Script
+        let userId = '';
+        let selectedFile = null;
 
-    <button onclick="submitForm()"
-      class="w-full bg-blue-600 text-white p-2 rounded">
-      ยืนยันจอง
-    </button>
-  </div>
+        // เริ่มต้น LIFF
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeLiff();
+            setupEventListeners();
+        });
 
-  <!-- status -->
-  <div id="statusBox" class="hidden text-center">
-    <p class="text-gray-600">คิวของคุณ</p>
-    <p id="qNumber" class="text-5xl font-bold text-blue-600"></p>
-    <p>รออีก <span id="wait"></span> คิว</p>
-  </div>
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: liffId });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    const profile = await liff.getProfile();
+                    userId = profile.userId;
+                    console.log('User ID:', userId);
+                }
+            } catch (error) {
+                console.error('LIFF Initialization failed', error);
+                showMessage('ไม่สามารถเชื่อมต่อกับ LINE ได้', 'error');
+            }
+        }
 
-</div>
+        function setupEventListeners() {
+            const imageUploadArea = document.getElementById('imageUploadArea');
+            const imageInput = document.getElementById('imageInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const removeImage = document.getElementById('removeImage');
+            const form = document.getElementById('queueForm');
 
-<script>
-const LIFF_ID = "2008930440-jI56TpIn";
-const API_URL = "https://script.google.com/macros/s/AKfycbz-2hGfG_U38qM64sdO930tvHJ0KvyHWbICnFOcRi5rmqlK0OMlsnHLlt-d0FoGQb6R6Q/exec";
+            // คลิกที่ area เพื่อเลือกไฟล์
+            imageUploadArea.addEventListener('click', () => imageInput.click());
 
-async function init() {
-  await liff.init({ liffId: LIFF_ID });
+            // เลือกไฟล์
+            imageInput.addEventListener('change', handleFileSelect);
 
-  if (!liff.isLoggedIn()) {
-    liff.login();
-    return;
-  }
+            // Drag and drop
+            imageUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageUploadArea.classList.add('dragover');
+            });
 
-  const profile = await liff.getProfile();
-  userId.value = profile.userId;
-  lineName.innerText = profile.displayName;
+            imageUploadArea.addEventListener('dragleave', () => {
+                imageUploadArea.classList.remove('dragover');
+            });
 
-  checkQueue(profile.userId);
-}
+            imageUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageUploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    imageInput.files = files;
+                    handleFileSelect({ target: imageInput });
+                }
+            });
 
-async function checkQueue(userIdVal) {
-  const res = await fetch(`${API_URL}?action=checkQueue&userId=${userIdVal}`);
-  const data = await res.json();
+            // ลบรูปภาพ
+            removeImage.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearImage();
+            });
 
-  loading.classList.add("hidden");
+            // Submit form
+            form.addEventListener('submit', handleSubmit);
 
-  if (data.hasQueue) {
-    showStatus(data.qNumber, data.waitCount);
-  } else {
-    formBox.classList.remove("hidden");
-  }
-}
+            // ตรวจสอบเบอร์โทร
+            document.getElementById('phone').addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+            });
+        }
 
-function showStatus(q, wait) {
-  formBox.classList.add("hidden");
-  statusBox.classList.remove("hidden");
-  qNumber.innerText = q;
-  wait.innerText = wait;
-}
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            
+            if (!file) return;
 
-async function submitForm() {
-  const nameInput = document.getElementById("name");
-  const phoneInput = document.getElementById("phone");
-  const imageInput = document.getElementById("image");
+            // ตรวจสอบขนาดไฟล์
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('ไฟล์มีขนาดใหญ่เกิน 5MB', 'error');
+                clearImage();
+                return;
+            }
 
-  const nameVal = nameInput.value.trim();
-  const phoneVal = phoneInput.value.trim();
+            // ตรวจสอบประเภทไฟล์
+            if (!file.type.match('image.*')) {
+                showMessage('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'error');
+                clearImage();
+                return;
+            }
 
-  if (!nameVal || !phoneVal) {
-    alert("กรุณากรอกข้อมูลให้ครบ");
-    return;
-  }
+            selectedFile = file;
 
-  if (!/^[0-9]{9,10}$/.test(phoneVal)) {
-    alert("กรุณากรอกเบอร์เป็นตัวเลข 9–10 หลัก");
-    return;
-  }
+            // แสดงชื่อไฟล์
+            document.getElementById('fileName').textContent = file.name;
 
-  const payload = {
-    action: "submitQueue",
-    userId: userId.value,
-    name: nameVal,
-    phone: phoneVal
-  };
+            // แสดง preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imagePreview = document.getElementById('imagePreview');
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                document.getElementById('removeImage').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
 
-  if (imageInput.files.length > 0) {
-    payload.image = await toBase64(imageInput.files[0]);
-  }
+        function clearImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('removeImage').style.display = 'none';
+            document.getElementById('fileName').textContent = '';
+            selectedFile = null;
+        }
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+        async function handleSubmit(e) {
+            e.preventDefault();
 
-  const data = await res.json();
-  showStatus(data.qNumber, data.waitCount);
-}
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
 
-function toBase64(file) {
-  return new Promise(res => {
-    const r = new FileReader();
-    r.onload = () => res(r.result);
-    r.readAsDataURL(file);
-  });
-}
+            if (!name || !phone || !selectedFile) {
+                showMessage('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                return;
+            }
 
-init();
-</script>
+            if (phone.length !== 10) {
+                showMessage('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก', 'error');
+                return;
+            }
 
+            // แสดง loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+            hideMessage();
+
+            try {
+                // แปลงรูปภาพเป็น base64
+                const base64Image = await fileToBase64(selectedFile);
+
+                // ส่งข้อมูลไปยัง Google Apps Script
+                const formData = {
+                    userId: userId,
+                    name: name,
+                    phone: phone,
+                    image: base64Image,
+                    fileName: selectedFile.name,
+                    mimeType: selectedFile.type
+                };
+
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                // เนื่องจากใช้ no-cors จะไม่สามารถอ่าน response ได้
+                // ดังนั้นเราจะถือว่าสำเร็จ และแจ้งเตือนผู้ใช้
+                showSuccess();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('เกิดข้อผิดพลาดในการจองคิว กรุณาลองใหม่อีกครั้ง', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function showSuccess() {
+            document.getElementById('queueForm').style.display = 'none';
+            showMessage('✅ จองคิวสำเร็จ! คุณจะได้รับการแจ้งเตือนผ่าน LINE เมื่อถึงคิวของคุณ', 'success');
+            
+            // รีเซ็ตฟอร์มหลัง 3 วินาที
+            setTimeout(() => {
+                document.getElementById('queueForm').style.display = 'block';
+                document.getElementById('queueForm').reset();
+                clearImage();
+                hideMessage();
+            }, 3000);
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type;
+            messageEl.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('message').style.display = 'none';
+        }
+    </script>
 </body>
-</html>
+</html> 
