@@ -9,19 +9,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-body { background:#f3f4f6; font-family: system-ui }
 .hidden { display:none }
 </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center">
+<body class="min-h-screen flex items-center justify-center bg-gray-100">
 
 <div class="bg-white p-6 rounded-xl shadow w-full max-w-md">
 
   <!-- loading -->
-  <div id="loading">
-    <p class="text-center"> กำลังเชื่อมต่อ LINE...</p>
-    <p id="error" class="text-red-500 text-sm mt-3 hidden"></p>
+  <div id="loading" class="text-center">
+    ⏳ กำลังเชื่อมต่อ LINE...
   </div>
 
   <!-- form -->
@@ -31,17 +29,14 @@ body { background:#f3f4f6; font-family: system-ui }
       LINE: <span id="lineName"></span>
     </p>
 
-    <!-- ❌ ไม่ใช้ submit -->
     <input type="hidden" id="userId">
 
     <input id="name" class="w-full border p-2 mb-2 rounded" placeholder="ชื่อ">
-    <input id="phone" class="w-full border p-2 mb-2 rounded" placeholder="เบอร์">
+    <input id="phone" class="w-full border p-2 mb-2 rounded" placeholder="เบอร์โทร">
 
     <input type="file" id="image" accept="image/*" class="mb-4">
 
-    <button
-      type="button"
-      onclick="submitForm()"
+    <button onclick="submitForm()"
       class="w-full bg-blue-600 text-white p-2 rounded">
       ยืนยันจอง
     </button>
@@ -49,7 +44,7 @@ body { background:#f3f4f6; font-family: system-ui }
 
   <!-- status -->
   <div id="statusBox" class="hidden text-center">
-    <p>คิวของคุณ</p>
+    <p class="text-gray-600">คิวของคุณ</p>
     <p id="qNumber" class="text-5xl font-bold text-blue-600"></p>
     <p>รออีก <span id="wait"></span> คิว</p>
   </div>
@@ -58,30 +53,25 @@ body { background:#f3f4f6; font-family: system-ui }
 
 <script>
 const LIFF_ID = "2008930440-jI56TpIn";
-const API_URL = "https://script.google.com/macros/s/AKfycbypHPu20zC6aaJO8EN-vjqf1wDXEW8IdDBAMUwAx1QTbyZAIsPazjxJ31d6hHP7DyaqWA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz-2hGfG_U38qM64sdO930tvHJ0KvyHWbICnFOcRi5rmqlK0OMlsnHLlt-d0FoGQb6R6Q/exec";
 
 async function init() {
-  try {
-    await liff.init({ liffId: LIFF_ID });
+  await liff.init({ liffId: LIFF_ID });
 
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return;
-    }
-
-    const profile = await liff.getProfile();
-    userId.value = profile.userId;
-    lineName.innerText = profile.displayName;
-
-    checkQueue(profile.userId);
-
-  } catch (err) {
-    showError(err.message);
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
   }
+
+  const profile = await liff.getProfile();
+  userId.value = profile.userId;
+  lineName.innerText = profile.displayName;
+
+  checkQueue(profile.userId);
 }
 
-async function checkQueue(userId) {
-  const res = await fetch(`${API_URL}?action=checkQueue&userId=${userId}`);
+async function checkQueue(userIdVal) {
+  const res = await fetch(`${API_URL}?action=checkQueue&userId=${userIdVal}`);
   const data = await res.json();
 
   loading.classList.add("hidden");
@@ -93,51 +83,50 @@ async function checkQueue(userId) {
   }
 }
 
-async function submitForm() {
-  try {
-    const nameVal = name.value.trim();
-    const phoneVal = phone.value.trim();
-
-    if (!nameVal || !phoneVal) {
-      alert("กรุณากรอกข้อมูลให้ครบ");
-      return;
-    }
-
-    const payload = {
-      action: "submitQueue",
-      userId: userId.value,
-      name: nameVal,
-      phone: phoneVal
-    };
-
-    if (image.files.length > 0) {
-      payload.image = await toBase64(image.files[0]);
-    }
-
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (!data.hasQueue) {
-      throw new Error("จองคิวไม่สำเร็จ");
-    }
-
-    formBox.classList.add("hidden");
-    showStatus(data.qNumber, data.waitCount);
-
-  } catch (err) {
-    alert("เกิดข้อผิดพลาด: " + err.message);
-  }
+function showStatus(q, wait) {
+  formBox.classList.add("hidden");
+  statusBox.classList.remove("hidden");
+  qNumber.innerText = q;
+  wait.innerText = wait;
 }
 
-function showStatus(qNumber, waitCount) {
-  statusBox.classList.remove("hidden");
-  qNumberEl.innerText = qNumber;
-  wait.innerText = waitCount ?? "-";
+async function submitForm() {
+  const nameInput = document.getElementById("name");
+  const phoneInput = document.getElementById("phone");
+  const imageInput = document.getElementById("image");
+
+  const nameVal = nameInput.value.trim();
+  const phoneVal = phoneInput.value.trim();
+
+  if (!nameVal || !phoneVal) {
+    alert("กรุณากรอกข้อมูลให้ครบ");
+    return;
+  }
+
+  if (!/^[0-9]{9,10}$/.test(phoneVal)) {
+    alert("กรุณากรอกเบอร์เป็นตัวเลข 9–10 หลัก");
+    return;
+  }
+
+  const payload = {
+    action: "submitQueue",
+    userId: userId.value,
+    name: nameVal,
+    phone: phoneVal
+  };
+
+  if (imageInput.files.length > 0) {
+    payload.image = await toBase64(imageInput.files[0]);
+  }
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  showStatus(data.qNumber, data.waitCount);
 }
 
 function toBase64(file) {
@@ -148,14 +137,8 @@ function toBase64(file) {
   });
 }
 
-function showError(msg) {
-  error.innerText = msg;
-  error.classList.remove("hidden");
-}
-
 init();
 </script>
-
 
 </body>
 </html>
